@@ -1,0 +1,43 @@
+{
+  "name": "far-fetch",
+  "version": "0.0.0",
+  "description": "Modern Fetch API wrapper for simplicity",
+  "main": "src/far-fetch.js",
+  "scripts": {
+    "build": "babel src -d lib",
+    "test": "jest --watchAll"
+  },
+  "keywords": [
+    "Fetch",
+    "API",
+    "wrapper",
+    "request",
+    "Ajax",
+    "xhr"
+  ],
+  "author": "Website Beaver",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.6",
+    "@babel/preset-env": "^7.9.6",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^8.1.0",
+    "babel-preset-airbnb": "^5.0.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-babel": "^5.3.0",
+    "eslint-plugin-compat": "^3.5.1",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-jest": "^23.10.0",
+    "fetch-mock-jest": "^1.3.0",
+    "jest": "^26.0.1",
+    "jsdoc-to-markdown": "^5.0.3",
+    "node-fetch": "^2.6.0"
+  },
+  "dependencies": {},
+  "browserslist": [
+    "> 1%",
+    "not IE 11"
+  ]
+}
