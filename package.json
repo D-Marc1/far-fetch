@@ -42,7 +42,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/D-Marc1/far-fetch"
+    "url": "https://github.com/websitebeaver/far-fetch"
   },
   "publishConfig": {
     "access": "public"
