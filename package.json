@@ -1,6 +1,6 @@
 {
   "name": "@websitebeaver/far-fetch",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Modern Fetch API wrapper for simplicity.",
   "main": "src/far-fetch.js",
   "scripts": {
@@ -41,8 +41,8 @@
     "not IE 11"
   ],
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/D-Marc1/far-fetch"
+    "type": "git",
+    "url": "https://github.com/D-Marc1/far-fetch"
   },
   "publishConfig": {
     "access": "public"
