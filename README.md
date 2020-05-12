@@ -11,7 +11,7 @@ npm i far-fetch
 Then include it in the files you want to use it in like so:
 
 ```js
-import FarFetch, { FarFetchError } from 'far-fetch';
+import FarFetch from 'far-fetch';
 
 // If you need to manually handle errors
 import FarFetch, { FarFetchError } from 'far-fetch';

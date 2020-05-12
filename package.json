@@ -1,7 +1,7 @@
 {
   "name": "far-fetch",
   "version": "0.0.0",
-  "description": "Modern Fetch API wrapper for simplicity",
+  "description": "Modern Fetch API wrapper for simplicity.",
   "main": "src/far-fetch.js",
   "scripts": {
     "build": "babel src -d lib",
