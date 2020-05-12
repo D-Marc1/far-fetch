@@ -5,7 +5,7 @@ Modern Fetch API wrapper for simplicity.
 ## Install
 
 ```
-npm i far-fetch
+npm i @websitebeaver/far-fetch
 ```
 
 Then include it in the files you want to use it in like so:
