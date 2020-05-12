@@ -39,5 +39,9 @@
   "browserslist": [
     "> 1%",
     "not IE 11"
-  ]
+  ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/D-Marc1/far-fetch"
+  }
 }
