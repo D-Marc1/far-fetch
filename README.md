@@ -141,7 +141,7 @@ async addPerson() {
 
   const response = await fetch(`https://example.com/people`, {
     method: 'POST',
-    headers: { 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(Object.entries(data)),
   });
 
@@ -175,7 +175,7 @@ async addPerson() {
 // application/x-www-form-urlencoded
 async addPerson() {
   const { responseJSON } = await ff.post('https://example.com/people', {
-    headers: { 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
