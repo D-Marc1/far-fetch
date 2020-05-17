@@ -78,8 +78,6 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [Catching Exceptions Manually](#catching-exceptions-manually)
     - [Empty Try/Catch](#empty-trycatch)
 - [API](#api)
-  - [Classes](#classes)
-  - [Typedefs](#typedefs)
   - [FarFetch](#farfetch)
     - [new FarFetch([options])](#new-farfetchoptions)
     - [farFetch.setDefaultOptions([...options])](#farfetchsetdefaultoptionsoptions)
@@ -92,12 +90,6 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [farFetch.head(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchheadurl-options--promiseresponseplus)
   - [FarFetchError ⇐ <code>Error</code>](#farfetcherror--error)
     - [new FarFetchError(message)](#new-farfetcherrormessage)
-  - [RequestException : <code>object</code>](#requestexception--object)
-  - [ResponsePlus : <code>object</code>](#responseplus--object)
-  - [errorHandlerCallback : <code>function</code>](#errorhandlercallback--function)
-  - [afterSendCallback : <code>function</code>](#aftersendcallback--function)
-  - [errorMsgTemplateCallback ⇒ <code>string</code>](#errormsgtemplatecallback--string)
-  - [RequestOptions : <code>object</code>](#requestoptions--object)
 
 ## Passing in Data to Request
 
@@ -191,12 +183,12 @@ async addPerson() {
 }
 ```
 
-Notice how it's completely predictable and doesn't require you to throw an
-exception if it's not a `200` status code. Notice how it's not much different
-than any other request with FarFetch. Sure, it's not horrible anymore in regular
-Javascript, thanks to features like `URLSearchParams` and `Object.entries`, but
-it's so much easier to not have to think much when you program. `FarFetch`'s
-consistent API makes it a breeze to make any sort of request.
+Notice how each request is completely predictable in `FarFetch` and doesn't
+require you to throw an exception if it's not a `200` status code. Sure, using
+the native javascript `Fetch API` isn't horrible anymore in regular Javascript,
+thanks to features like `URLSearchParams` and `Object.entries`, but it's so much
+easier to not have to think much when you program. `FarFetch`'s consistent API
+makes it a breeze to make any sort of request.
 
 ## Uploading Files
 
@@ -339,8 +331,8 @@ async uploadFiles() {
 
 Look at how much more comprehensible the code becomes with `FarFetch`. This is
 practically even readable by a non-programmer, as this reads as: *Let's add a 22
-year old man named Bobby, along with uploading his following files: photos,
-videos and documents*.
+year old man named Bobby and upload his following files: photos, videos and
+documents*.
 
 ## Passing in Fetch API init options
 

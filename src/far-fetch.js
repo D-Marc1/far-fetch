@@ -252,7 +252,7 @@ export default class FarFetch {
       // File upload shouldn't have a content supplied; it will auto-detect
       delete options.headers?.['Content-Type'];
     // Data object has at least one property
-    } else if (Object.getOwnPropertyNames(data).length > 0) {
+    } else if (Object.keys(data).length > 0) {
       // Can't be used in body
       if (options.method === 'GET' || options.method === 'DELETE' || options.method === 'HEAD') {
         queryString = `?${new URLSearchParams(Object.entries(data))}`;
