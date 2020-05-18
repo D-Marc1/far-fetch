@@ -80,7 +80,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [Empty Try/Catch](#empty-trycatch)
 - [API](#api)
   - [FarFetch](#farfetch)
-    - [new FarFetch([options], [baseURL])](#new-farfetchoptions-baseurl)
+    - [new FarFetch([options])](#new-farfetchoptions)
     - [farFetch.setDefaultOptions([...options])](#farfetchsetdefaultoptionsoptions)
     - [farFetch.fetch(url, options) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchfetchurl-options--promiseresponseplus)
     - [farFetch.get(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchgeturl-options--promiseresponseplus)
@@ -730,7 +730,7 @@ CRUD class to simplify fetch API and uploading.
 **Kind**: global class  
 
 * [FarFetch](#FarFetch)
-    * [new FarFetch([options], [baseURL])](#new_FarFetch_new)
+    * [new FarFetch([options])](#new_FarFetch_new)
     * [.setDefaultOptions([...options])](#FarFetch+setDefaultOptions)
     * [.fetch(url, options)](#FarFetch+fetch) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
     * [.get(url, [...options])](#FarFetch+get) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
@@ -742,14 +742,14 @@ CRUD class to simplify fetch API and uploading.
 
 <a name="new_FarFetch_new"></a>
 
-### new FarFetch([options], [baseURL])
+### new FarFetch([options])
 Create FarFetch object.
 
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [options] | <code>object</code> | <code>{}</code> | Set options. |
-| [baseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Base URL for each request. |
+| [options.baseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Base URL for each request. |
 | [options.beforeSend] | <code>function</code> |  | Function to do something before each fetch request. |
 | [options.afterSend] | [<code>afterSendCallback</code>](#afterSendCallback) |  | Function to do something after each fetch request. |
 | [options.errorHandler] | [<code>errorHandlerCallback</code>](#errorHandlerCallback) |  | Global error handler. |

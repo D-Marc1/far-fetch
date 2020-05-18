@@ -81,7 +81,7 @@ export default class FarFetch {
    * Create FarFetch object.
    *
    * @param {object} [options = {}] - Set options.
-   * @param {string} [baseURL = ''] - Base URL for each request.
+   * @param {string} [options.baseURL = ''] - Base URL for each request.
    * @param {Function} [options.beforeSend] - Function to do something before each fetch request.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
    * request.
