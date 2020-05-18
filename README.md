@@ -70,6 +70,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [Set Global Options for Every Request](#set-global-options-for-every-request)
   - [Getting Response](#getting-response)
     - [Retrieving Response Data](#retrieving-response-data)
+  - [Set Base URL](#set-base-url)
   - [Before/After Send Hook](#beforeafter-send-hook)
     - [Turn off Before/After Send Hook on Single Request](#turn-off-beforeafter-send-hook-on-single-request)
   - [Error Handling](#error-handling)
@@ -79,7 +80,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [Empty Try/Catch](#empty-trycatch)
 - [API](#api)
   - [FarFetch](#farfetch)
-    - [new FarFetch([options])](#new-farfetchoptions)
+    - [new FarFetch([options], [baseURL])](#new-farfetchoptions-baseurl)
     - [farFetch.setDefaultOptions([...options])](#farfetchsetdefaultoptionsoptions)
     - [farFetch.fetch(url, options) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchfetchurl-options--promiseresponseplus)
     - [farFetch.get(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchgeturl-options--promiseresponseplus)
@@ -447,6 +448,31 @@ const { responseText } = await ff.get('https://example.com/people');
 return responseText;
 ```
 
+## Set Base URL
+
+Most applications will likely use the same domain for most or even all requests.
+`FarFetch` has a `baseURL` option you can use when you instantiate the class.
+
+```js
+const ff = new FarFetch({
+  baseURL: 'https://example.com',
+});
+```
+
+Now request like the following will work.
+
+```js
+await ff.get('/people');
+```
+
+But what if you want to use a different base URL for just a few requests in your
+application? `FarFetch` automatically detects if an absolute path is used, and
+will override the `baseURL`.
+
+```js
+await ff.get('https://notexample.com/posts');
+```
+
 ## Before/After Send Hook
 
 You can use the built-in `beforeSend()` hook to do something before every
@@ -668,10 +694,9 @@ and try to route to the logged in route, even if the request failed.
 
 <dl>
 <dt><a href="#FarFetch">FarFetch</a></dt>
-<dd><p>CRUD class to simplify fetch API and uploading.</p>
+<dd><p>CRUD class to simplify fetch API and uploading.</p></dd>
 <dt><a href="#FarFetchError">FarFetchError</a></dt>
-<dd><p>FarFetch Error class.</p>
-</dd>
+<dd><p>FarFetch Error class.</p></dd>
 </dl>
 
 ## Typedefs
@@ -705,7 +730,7 @@ CRUD class to simplify fetch API and uploading.
 **Kind**: global class  
 
 * [FarFetch](#FarFetch)
-    * [new FarFetch([options])](#new_FarFetch_new)
+    * [new FarFetch([options], [baseURL])](#new_FarFetch_new)
     * [.setDefaultOptions([...options])](#FarFetch+setDefaultOptions)
     * [.fetch(url, options)](#FarFetch+fetch) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
     * [.get(url, [...options])](#FarFetch+get) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
@@ -717,13 +742,14 @@ CRUD class to simplify fetch API and uploading.
 
 <a name="new_FarFetch_new"></a>
 
-### new FarFetch([options])
+### new FarFetch([options], [baseURL])
 Create FarFetch object.
 
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [options] | <code>object</code> | <code>{}</code> | Set options. |
+| [baseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Base URL for each request. |
 | [options.beforeSend] | <code>function</code> |  | Function to do something before each fetch request. |
 | [options.afterSend] | [<code>afterSendCallback</code>](#afterSendCallback) |  | Function to do something after each fetch request. |
 | [options.errorHandler] | [<code>errorHandlerCallback</code>](#errorHandlerCallback) |  | Global error handler. |

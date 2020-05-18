@@ -81,6 +81,7 @@ export default class FarFetch {
    * Create FarFetch object.
    *
    * @param {object} [options = {}] - Set options.
+   * @param {string} [baseURL = ''] - Base URL for each request.
    * @param {Function} [options.beforeSend] - Function to do something before each fetch request.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
    * request.
@@ -108,12 +109,14 @@ export default class FarFetch {
    * });
    */
   constructor({
+    baseURL = '',
     beforeSend,
     afterSend,
     errorHandler,
     errorMsgTemplate,
     ...defaultOptions
   } = {}) {
+    this.baseURL = baseURL;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
     this.errorHandler = errorHandler;
@@ -340,7 +343,14 @@ export default class FarFetch {
     let response = '';
 
     try {
-      response = await fetch(`${url}${queryString}`, options);
+      let fullURL = `${url}${queryString}`;
+
+      // Base URL is given and URL on request is a relative path
+      if (this.baseURL && !FarFetchHelper.isAbsoluteURL(url)) {
+        fullURL = `${this.baseURL}${fullURL}`;
+      }
+
+      response = await fetch(fullURL, options);
 
       if (response.status !== 200) throw new FarFetchError('Server error.');
     } catch (error) {

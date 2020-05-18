@@ -195,8 +195,28 @@ describe('testing upload', () => {
   });
 });
 
-describe('testing default options on instantiation', () => {
-  it('should accept default options', async () => {
+describe('testing options on instantiation', () => {
+  it('should accept baseURL option with relative path', async () => {
+    const ff = new FarFetch({ baseURL: 'http://example.com' });
+
+    fetchMock.get('http://example.com/usersggg', 200);
+
+    const response = await ff.get('/usersggg');
+
+    expect(response.url).toEqual('http://example.com/usersggg');
+  });
+
+  it('should NOT accept baseURL option with absolute path', async () => {
+    const ff = new FarFetch({ baseURL: 'http://example.com/' });
+
+    fetchMock.get('https://notexample.com/users4', 200);
+
+    const response = await ff.get('https://notexample.com/users4');
+
+    expect(response.url).toEqual('https://notexample.com/users4');
+  });
+
+  it('should accept Fetch API init options', async () => {
     const initOptions = {
       headers: {
         Authorization: 'Bearer kd9sj99jd9e',
@@ -215,7 +235,7 @@ describe('testing default options on instantiation', () => {
     expect(fetchMock.mock.calls[0][1]).toEqual(initOptions);
   });
 
-  it('should set init options with setDefaultOptions()', async () => {
+  it('should set Fetch API init options with setDefaultOptions()', async () => {
     const initOptions = {
       headers: {
         Authorization: 'Bearer',
@@ -235,7 +255,7 @@ describe('testing default options on instantiation', () => {
     expect(fetchMock.mock.calls[0][1]).toEqual(initOptions);
   });
 
-  it('should NOT accept default options when defaultOptionsUsed is set to false', async () => {
+  it('should NOT accept Fetch API init options when defaultOptionsUsed is set to false', async () => {
     const initOptions = {
       headers: {
         Authorization: 'Bearer k9dsj99jd9e',
