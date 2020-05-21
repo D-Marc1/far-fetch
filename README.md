@@ -986,11 +986,11 @@ Request object plus responseJSON and responseText properties if correct header t
 **Kind**: global typedef  
 **Properties**
 
-| Name | Type | Description |
-| --- | --- | --- |
-| response | <code>Response</code> | Fetch API response [Response object](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
-| [response.responseJSON] | <code>object</code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
-| [response.responseText] | <code>string</code> | FarFetch added property that transforms the body to text for syntactic sugar if the same response header type. |
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| response | <code>Response</code> |  | Fetch API response [Response object](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
+| [response.responseJSON] | <code>object</code> | <code>null</code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
+| [response.responseText] | <code>string</code> | <code>null</code> | FarFetch added property that transforms the body to text for syntactic sugar if the same response header type. |
 
 <a name="RequestOptions"></a>
 

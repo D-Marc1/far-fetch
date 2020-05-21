@@ -17,10 +17,11 @@ export { FarFetchError };
  * @typedef {object} ResponsePlus
  * @property {Response} response - Fetch API response
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Response|Response object}.
- * @property {object} [response.responseJSON] - FarFetch added property that transforms the body to
+ * @property {object} [response.responseJSON = null] - FarFetch added property that transforms the
+ * body to
  * JSON for syntactic sugar if the same response header type.
- * @property {string} [response.responseText] - FarFetch added property that transforms the body to
- * text for syntactic sugar if the same response header type.
+ * @property {string} [response.responseText = null] - FarFetch added property that transforms the
+ * body to text for syntactic sugar if the same response header type.
  */
 
 /**
