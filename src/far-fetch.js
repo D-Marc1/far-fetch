@@ -24,35 +24,6 @@ export { FarFetchError };
  */
 
 /**
- * Callback for global error handler.
- *
- * @callback errorHandlerCallback
- * @param {object} options
- * @param {FarFetchError|Error} options.error - The FarFetchError option. Will throw regular error
- * if needed.
- * @param {ResponsePlus} options.response - Request object plus responseJSON and responseText
- * properties if correct header type.
- * @param {string} options.userMessage - The message given to the user.
- */
-
-/**
- * Callback for global after send hook.
- *
- * @callback afterSendCallback
- * @param {ResponsePlus} response - Request object plus responseJSON and responseText properties if
- * correct header type.
- */
-
-/**
- * Callback for overriding default error message template.
- *
- * @callback errorMsgTemplateCallback
- * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} method - The CRUD method.
- * @param {string} errorMsgNoun - The error message noun.
- * @returns {string} Full error message string.
- */
-
-/**
  * The request object options.
  *
  * @typedef {object} RequestOptions
@@ -73,6 +44,36 @@ export { FarFetchError };
  * @property {...object} [rest = {}] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
+ */
+
+/**
+ * Callback for global error handler.
+ *
+ * @callback errorHandlerCallback
+ * @param {object} [options]
+ * @param {FarFetchError|Error} [options.error] - The FarFetchError option. Will throw regular error
+ * if needed.
+ * @param {ResponsePlus} [options.response] - Request object plus responseJSON and responseText
+ * properties if correct header type.
+ * @param {string} [options.userMessage] - The message given to the user.
+ */
+
+/**
+ * Callback for global after send hook.
+ *
+ * @callback afterSendCallback
+ * @param {ResponsePlus} response - Request object plus responseJSON and responseText properties if
+ * correct header type.
+ */
+
+/**
+ * Callback for overriding default error message template.
+ *
+ * @callback errorMsgTemplateCallback
+ * @param {object} [options]
+ * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} [options.method] - The CRUD method.
+ * @param {string} [options.errorMsgNoun] - The error message noun.
+ * @returns {string} Full error message string.
  */
 
 /** CRUD class to simplify fetch API and uploading. */

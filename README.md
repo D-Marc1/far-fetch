@@ -378,7 +378,6 @@ const ff = new FarFetch({
     if (localStorage.getItem('token')) {
       this.setDefaultOptions({
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
@@ -694,9 +693,10 @@ and try to route to the logged in route, even if the request failed.
 
 <dl>
 <dt><a href="#FarFetch">FarFetch</a></dt>
-<dd><p>CRUD class to simplify fetch API and uploading.</p></dd>
+<dd><p>CRUD class to simplify fetch API and uploading.</p>
 <dt><a href="#FarFetchError">FarFetchError</a></dt>
 <dd><p>FarFetch Error class.</p></dd>
+</dd>
 </dl>
 
 ## Typedefs
@@ -708,6 +708,9 @@ and try to route to the logged in route, even if the request failed.
 <dt><a href="#ResponsePlus">ResponsePlus</a> : <code>object</code></dt>
 <dd><p>Request object plus responseJSON and responseText properties if correct header type.</p>
 </dd>
+<dt><a href="#RequestOptions">RequestOptions</a> : <code>object</code></dt>
+<dd><p>The request object options.</p>
+</dd>
 <dt><a href="#errorHandlerCallback">errorHandlerCallback</a> : <code>function</code></dt>
 <dd><p>Callback for global error handler.</p>
 </dd>
@@ -716,9 +719,6 @@ and try to route to the logged in route, even if the request failed.
 </dd>
 <dt><a href="#errorMsgTemplateCallback">errorMsgTemplateCallback</a> ⇒ <code>string</code></dt>
 <dd><p>Callback for overriding default error message template.</p>
-</dd>
-<dt><a href="#RequestOptions">RequestOptions</a> : <code>object</code></dt>
-<dd><p>The request object options.</p>
 </dd>
 </dl>
 
@@ -992,6 +992,25 @@ Request object plus responseJSON and responseText properties if correct header t
 | [response.responseJSON] | <code>object</code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
 | [response.responseText] | <code>string</code> | FarFetch added property that transforms the body to text for syntactic sugar if the same response header type. |
 
+<a name="RequestOptions"></a>
+
+## RequestOptions : <code>object</code>
+The request object options.
+
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| [data] | <code>object.&lt;string, (string\|number\|null\|boolean)&gt;</code> | <code>{}</code> | Data sent to server on request. |
+| [files] | <code>File</code> \| <code>Array.&lt;File&gt;</code> \| <code>object.&lt;string, File&gt;</code> \| <code>object.&lt;string, Array.&lt;File&gt;&gt;</code> |  | Files to upload to server. Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys. |
+| [errorMsgNoun] | <code>string</code> | <code>&#x27;&#x27;</code> | Appended error message noun to global error handler. |
+| [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun` |
+| [globalBeforeSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the beforeSend() hook? |
+| [globalAfterSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the afterSend() hook? |
+| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation or with `setDefaultOptions()`? |
+| [...rest] | <code>object</code> | <code>{}</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
+
 <a name="errorHandlerCallback"></a>
 
 ## errorHandlerCallback : <code>function</code>
@@ -1001,10 +1020,10 @@ Callback for global error handler.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| options | <code>object</code> |  |
-| options.error | <code>FarFetchError</code> \| <code>Error</code> | The FarFetchError option. Will throw regular error if needed. |
-| options.response | [<code>ResponsePlus</code>](#ResponsePlus) | Request object plus responseJSON and responseText properties if correct header type. |
-| options.userMessage | <code>string</code> | The message given to the user. |
+| [options] | <code>object</code> |  |
+| [options.error] | <code>FarFetchError</code> \| <code>Error</code> | The FarFetchError option. Will throw regular error if needed. |
+| [options.response] | [<code>ResponsePlus</code>](#ResponsePlus) | Request object plus responseJSON and responseText properties if correct header type. |
+| [options.userMessage] | <code>string</code> | The message given to the user. |
 
 <a name="afterSendCallback"></a>
 
@@ -1027,24 +1046,6 @@ Callback for overriding default error message template.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| method | <code>&#x27;GET&#x27;</code> \| <code>&#x27;POST&#x27;</code> \| <code>&#x27;PUT&#x27;</code> \| <code>&#x27;PATCH&#x27;</code> \| <code>&#x27;DELETE&#x27;</code> \| <code>&#x27;HEAD&#x27;</code> | The CRUD method. |
-| errorMsgNoun | <code>string</code> | The error message noun. |
-
-<a name="RequestOptions"></a>
-
-## RequestOptions : <code>object</code>
-The request object options.
-
-**Kind**: global typedef  
-**Properties**
-
-| Name | Type | Default | Description |
-| --- | --- | --- | --- |
-| [data] | <code>object.&lt;string, (string\|number\|null\|boolean)&gt;</code> | <code>{}</code> | Data sent to server on request. |
-| [files] | <code>File</code> \| <code>Array.&lt;File&gt;</code> \| <code>object.&lt;string, File&gt;</code> \| <code>object.&lt;string, Array.&lt;File&gt;&gt;</code> |  | Files to upload to server. Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys. |
-| [errorMsgNoun] | <code>string</code> | <code>&#x27;&#x27;</code> | Appended error message noun to global error handler. |
-| [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun` |
-| [globalBeforeSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the beforeSend() hook? |
-| [globalAfterSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the afterSend() hook? |
-| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation or with `setDefaultOptions()`? |
-| [...rest] | <code>object</code> | <code>{}</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
+| [options] | <code>object</code> |  |
+| [options.method] | <code>&#x27;GET&#x27;</code> \| <code>&#x27;POST&#x27;</code> \| <code>&#x27;PUT&#x27;</code> \| <code>&#x27;PATCH&#x27;</code> \| <code>&#x27;DELETE&#x27;</code> \| <code>&#x27;HEAD&#x27;</code> | The CRUD method. |
+| [options.errorMsgNoun] | <code>string</code> | The error message noun. |
