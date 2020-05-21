@@ -116,7 +116,7 @@ async getPerson() {
     method: 'GET',
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 
   return response.json();
 }
@@ -131,7 +131,7 @@ async addPerson() {
     body: JSON.stringify(data),
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 
   return response.json();
 }
@@ -146,7 +146,7 @@ async addPerson() {
     body: new URLSearchParams(Object.entries(data)),
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 
   return response.json();
 }
@@ -185,11 +185,12 @@ async addPerson() {
 ```
 
 Notice how each request is completely predictable in `FarFetch` and doesn't
-require you to throw an exception if it's not a `200` status code. Sure, using
-the native javascript `Fetch API` isn't horrible anymore in regular Javascript,
-thanks to features like `URLSearchParams` and `Object.entries`, but it's so much
-easier to not have to think much when you program. `FarFetch`'s consistent API
-makes it a breeze to make any sort of request.
+require you to throw an exception if it's not a status code in the `200-299`
+range (response.ok). Sure, using the native javascript `Fetch API` isn't
+horrible anymore in regular Javascript, thanks to features like
+`URLSearchParams` and `Object.entries`, but it's so much easier to not have to
+think much when you program. `FarFetch`'s consistent API makes it a breeze to
+make any sort of request.
 
 ## Uploading Files
 
@@ -216,7 +217,7 @@ async uploadFile() {
     body: formData,
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 }
 ```
 
@@ -258,7 +259,7 @@ async uploadFiles() {
     body: formData,
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 }
 ```
 
@@ -311,7 +312,7 @@ async uploadFiles() {
     body: formData,
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 }
 ```
 
@@ -517,7 +518,7 @@ try {
     body: JSON.stringify(data),
   });
 
-  if(response.status !== 200) throw new Error('Server error.');
+  if(!response.ok) throw new Error('Server error.');
 } catch {
   alert('Error adding person');
 }

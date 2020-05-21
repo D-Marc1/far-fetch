@@ -189,10 +189,10 @@ export default class FarFetch {
    * @returns {string} Full error message string.
    */
   userMessage({ method, errorMsg, errorMsgNoun }) {
-    if (errorMsg) {
-      return errorMsg;
-    }
+    // Custom error message used for single request
+    if (errorMsg) return errorMsg;
 
+    // Error template is modified
     if (typeof this.errorMsgTemplate === 'function') {
       const errorMsgTemplate = this.errorMsgTemplate({ method, errorMsgNoun });
 
@@ -354,7 +354,7 @@ export default class FarFetch {
 
       response = await fetch(fullURL, options);
 
-      if (response.status !== 200) throw new FarFetchError('Server error.');
+      if (!response.ok) throw new FarFetchError('Server error.');
     } catch (error) {
       if (error instanceof FarFetchError) {
         // Global error handler needs to be declared and either
