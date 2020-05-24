@@ -41,7 +41,9 @@
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
+  },
   "browserslist": [
     "> 1%",
     "not IE 11"

@@ -1,4 +1,6 @@
 /* eslint-disable jest/expect-expect */
+import deepMerge from 'lodash.merge';
+
 import fetchMock from 'fetch-mock-jest';
 
 import FarFetch, { FarFetchError } from '../src/far-fetch';
@@ -216,7 +218,7 @@ describe('testing options on instantiation', () => {
     expect(response.url).toEqual('https://notexample.com/users4');
   });
 
-  it('should accept Fetch API init options', async () => {
+  it('should accept Fetch API init options on the constructor', async () => {
     const initOptions = {
       headers: {
         Authorization: 'Bearer kd9sj99jd9e',
@@ -235,24 +237,46 @@ describe('testing options on instantiation', () => {
     expect(fetchMock.mock.calls[0][1]).toEqual(initOptions);
   });
 
-  it('should set Fetch API init options with setDefaultOptions()', async () => {
-    const initOptions = {
+  it(`should set Fetch API init options on both the consturctor and with beforeSend() return, but
+  give beforeSend() return precedence`, async () => {
+    const defaultOptions = {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'reload',
+    };
+
+    const beforeSendOptions = {
       headers: {
+        'Content-Type': 'text/plain',
         Authorization: 'Bearer',
       },
     };
 
-    const ff = new FarFetch();
+    const ff = new FarFetch({
+      beforeSend: () => beforeSendOptions,
+      ...defaultOptions,
+    });
 
-    ff.setDefaultOptions(initOptions);
+    const mergedOptions = deepMerge(defaultOptions, beforeSendOptions);
 
     fetchMock.get('http://example.com/usersdgd', 200);
 
     await ff.get('http://example.com/usersdgd');
 
-    initOptions.method = 'GET';
+    mergedOptions.method = 'GET';
 
-    expect(fetchMock.mock.calls[0][1]).toEqual(initOptions);
+    expect(fetchMock.mock.calls[0][1]).toEqual(mergedOptions);
+  });
+
+  it('should throw a TypeError if beforeSend() return type is not a plain object', async () => {
+    const ff = new FarFetch({
+      beforeSend: () => 2,
+    });
+
+    fetchMock.get('http://example.com/usersdgdjj', 200);
+
+    await expect(
+      ff.get('http://example.com/usersdgdjj'),
+    ).rejects.toThrow(TypeError);
   });
 
   it('should NOT accept Fetch API init options when defaultOptionsUsed is set to false', async () => {

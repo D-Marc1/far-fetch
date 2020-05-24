@@ -81,7 +81,6 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
 - [API](#api)
   - [FarFetch](#farfetch)
     - [new FarFetch([options])](#new-farfetchoptions)
-    - [farFetch.setDefaultOptions([...options])](#farfetchsetdefaultoptionsoptions)
     - [farFetch.fetch(url, options) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchfetchurl-options--promiseresponseplus)
     - [farFetch.get(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchgeturl-options--promiseresponseplus)
     - [farFetch.post(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchposturl-options--promiseresponseplus)
@@ -91,6 +90,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [farFetch.head(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchheadurl-options--promiseresponseplus)
   - [FarFetchError ⇐ <code>Error</code>](#farfetcherror--error)
     - [new FarFetchError(message)](#new-farfetcherrormessage)
+  - [beforeSendCallback ⇒ <code>object</code> \| <code>undefined</code>](#beforesendcallback--object--undefined)
 
 ## Passing in Data to Request
 
@@ -369,42 +369,43 @@ Sometimes you might not want to set a particular option when FarFetch is
 created. Let's say you're using a login system. You don't want to have the `JWT`
 be evaluated when you instantiate the class, since it won't work properly if a
 user accesses the page logged out. The header would never reevaluate. This is
-why `FarFetch` has a handy `setDefaultOptions()` function, which you can combine
-with the global `beforeSend()` option.
+why `FarFetch` has allows you to return options you want to use on specific
+conditions on the global `beforeSend()` function. These options will then get
+deep merged, with the `beforeSend()` return taking precedence.
 
 ```js
 const ff = new FarFetch({
+  headers: { 'Content-Type': 'application/json' },
+  cache: 'reload',
   beforeSend() {
-    // Set header to token if token set in localStorage
+    // Use authorization header if token set in localStorage
     if (localStorage.getItem('token')) {
-      this.setDefaultOptions({
+      return {
         headers: {
+          'Content-Type': 'text/plain',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-      });
+      };
     }
   },
 });
 ```
 
-*It should be noted that nested options, like `headers`, will currently override
-what was set on instantiation*. For instance, if headers were set
-initialization, like in the first example of this section, it would have the
-following options:
+So if you're logged in, your request would have the following options.
 
 ```js
 {
   headers: {
+    'Content-Type': 'text/plain',
     Authorization: `Bearer ${localStorage.getItem('token')}`,
   },
   cache: reload,
 }
 ```
 
-As stated before, only *nested* options get overridden, as `cache: reload` was
-kept. The reason is because behind the scenes, `setDefaultOptions()` simply does
-the following: `this.defaultOptions = { ...this.defaultOptions, ...options };`.
-The same applies for when you override on individual requests as well.
+Notice how the `Content-Type` is set to `text/plain`, rather than
+`application/json`. As stated before, this is because the return on
+`beforeSend()` takes precedence on the deep merge.
 
 ## Getting Response
 
@@ -694,10 +695,9 @@ and try to route to the logged in route, even if the request failed.
 
 <dl>
 <dt><a href="#FarFetch">FarFetch</a></dt>
-<dd><p>CRUD class to simplify fetch API and uploading.</p>
+<dd><p>CRUD class to simplify fetch API and uploading.</p></dd>
 <dt><a href="#FarFetchError">FarFetchError</a></dt>
 <dd><p>FarFetch Error class.</p></dd>
-</dd>
 </dl>
 
 ## Typedefs
@@ -712,11 +712,14 @@ and try to route to the logged in route, even if the request failed.
 <dt><a href="#RequestOptions">RequestOptions</a> : <code>object</code></dt>
 <dd><p>The request object options.</p>
 </dd>
-<dt><a href="#errorHandlerCallback">errorHandlerCallback</a> : <code>function</code></dt>
-<dd><p>Callback for global error handler.</p>
+<dt><a href="#beforeSendCallback">beforeSendCallback</a> ⇒ <code>object</code> | <code>undefined</code></dt>
+<dd><p>Callback for global after send hook.</p>
 </dd>
 <dt><a href="#afterSendCallback">afterSendCallback</a> : <code>function</code></dt>
 <dd><p>Callback for global after send hook.</p>
+</dd>
+<dt><a href="#errorHandlerCallback">errorHandlerCallback</a> : <code>function</code></dt>
+<dd><p>Callback for global error handler.</p>
 </dd>
 <dt><a href="#errorMsgTemplateCallback">errorMsgTemplateCallback</a> ⇒ <code>string</code></dt>
 <dd><p>Callback for overriding default error message template.</p>
@@ -732,7 +735,6 @@ CRUD class to simplify fetch API and uploading.
 
 * [FarFetch](#FarFetch)
     * [new FarFetch([options])](#new_FarFetch_new)
-    * [.setDefaultOptions([...options])](#FarFetch+setDefaultOptions)
     * [.fetch(url, options)](#FarFetch+fetch) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
     * [.get(url, [...options])](#FarFetch+get) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
     * [.post(url, [...options])](#FarFetch+post) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
@@ -751,7 +753,7 @@ Create FarFetch object.
 | --- | --- | --- | --- |
 | [options] | <code>object</code> | <code>{}</code> | Set options. |
 | [options.baseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Base URL for each request. |
-| [options.beforeSend] | <code>function</code> |  | Function to do something before each fetch request. |
+| [options.beforeSend] | [<code>beforeSendCallback</code>](#beforeSendCallback) |  | Function to do something before each fetch request. Can return object with RequestOptions to add or override options. |
 | [options.afterSend] | [<code>afterSendCallback</code>](#afterSendCallback) |  | Function to do something after each fetch request. |
 | [options.errorHandler] | [<code>errorHandlerCallback</code>](#errorHandlerCallback) |  | Global error handler. |
 | [options.errorMsgTemplate] | [<code>errorMsgTemplateCallback</code>](#errorMsgTemplateCallback) |  | Function to modify the default error message template for `errorMsgNoun`. |
@@ -776,17 +778,6 @@ const ff = new FarFetch({
   headers: { 'Content-Type': 'application/json' },
 });
 ```
-<a name="FarFetch+setDefaultOptions"></a>
-
-### farFetch.setDefaultOptions([...options])
-Set default options.
-
-**Kind**: instance method of [<code>FarFetch</code>](#FarFetch)  
-
-| Param | Type |
-| --- | --- |
-| [...options] | [<code>RequestOptions</code>](#RequestOptions) | 
-
 <a name="FarFetch+fetch"></a>
 
 ### farFetch.fetch(url, options) ⇒ [<code>Promise.&lt;ResponsePlus&gt;</code>](#ResponsePlus)
@@ -990,7 +981,7 @@ Request object plus responseJSON and responseText properties if correct header t
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | response | <code>Response</code> |  | Fetch API response [Response object](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
-| [response.responseJSON] | <code>object</code> | <code>null</code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
+| [response.responseJSON] | <code>object</code> | <code></code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
 | [response.responseText] | <code>string</code> | <code>null</code> | FarFetch added property that transforms the body to text for syntactic sugar if the same response header type. |
 
 <a name="RequestOptions"></a>
@@ -1009,8 +1000,27 @@ The request object options.
 | [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun` |
 | [globalBeforeSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the beforeSend() hook? |
 | [globalAfterSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the afterSend() hook? |
-| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation or with `setDefaultOptions()`? |
+| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation or with return value of `beforeSend()`? |
 | [...rest] | <code>object</code> | <code>{}</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
+
+<a name="beforeSendCallback"></a>
+
+## beforeSendCallback ⇒ <code>object</code> \| <code>undefined</code>
+Callback for global after send hook.
+
+**Kind**: global typedef  
+**Returns**: <code>object</code> \| <code>undefined</code> - If return value is set, will deep merge it with options set in
+constructor.  
+<a name="afterSendCallback"></a>
+
+## afterSendCallback : <code>function</code>
+Callback for global after send hook.
+
+**Kind**: global typedef  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| response | [<code>ResponsePlus</code>](#ResponsePlus) | Request object plus responseJSON and responseText properties if correct header type. |
 
 <a name="errorHandlerCallback"></a>
 
@@ -1025,17 +1035,6 @@ Callback for global error handler.
 | [options.error] | <code>FarFetchError</code> \| <code>Error</code> | The FarFetchError option. Will throw regular error if needed. |
 | [options.response] | [<code>ResponsePlus</code>](#ResponsePlus) | Request object plus responseJSON and responseText properties if correct header type. |
 | [options.userMessage] | <code>string</code> | The message given to the user. |
-
-<a name="afterSendCallback"></a>
-
-## afterSendCallback : <code>function</code>
-Callback for global after send hook.
-
-**Kind**: global typedef  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| response | [<code>ResponsePlus</code>](#ResponsePlus) | Request object plus responseJSON and responseText properties if correct header type. |
 
 <a name="errorMsgTemplateCallback"></a>
 

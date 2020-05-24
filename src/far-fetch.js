@@ -1,3 +1,5 @@
+import deepMerge from 'lodash.merge';
+
 import FarFetchHelper from './far-fetch-helper';
 import FarFetchError from './far-fetch-error';
 
@@ -41,10 +43,26 @@ export { FarFetchError };
  * @property {boolean} [globalAfterSend = true] - Will this specific request use the afterSend()
  * hook?
  * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
- * options specified on instantiation or with `setDefaultOptions()`?
+ * options specified on instantiation or with return value of `beforeSend()`?
  * @property {...object} [rest = {}] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
+ */
+
+/**
+ * Callback for global after send hook.
+ *
+ * @callback beforeSendCallback
+ * @returns {object|undefined} If return value is set, will deep merge it with options set in
+ * constructor.
+ */
+
+/**
+ * Callback for global after send hook.
+ *
+ * @callback afterSendCallback
+ * @param {ResponsePlus} response - Request object plus responseJSON and responseText properties if
+ * correct header type.
  */
 
 /**
@@ -57,14 +75,6 @@ export { FarFetchError };
  * @param {ResponsePlus} [options.response] - Request object plus responseJSON and responseText
  * properties if correct header type.
  * @param {string} [options.userMessage] - The message given to the user.
- */
-
-/**
- * Callback for global after send hook.
- *
- * @callback afterSendCallback
- * @param {ResponsePlus} response - Request object plus responseJSON and responseText properties if
- * correct header type.
  */
 
 /**
@@ -84,7 +94,8 @@ export default class FarFetch {
    *
    * @param {object} [options = {}] - Set options.
    * @param {string} [options.baseURL = ''] - Base URL for each request.
-   * @param {Function} [options.beforeSend] - Function to do something before each fetch request.
+   * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
+   * each fetch request. Can return object with RequestOptions to add or override options.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
    * request.
    * @param {errorHandlerCallback} [options.errorHandler] - Global error handler.
@@ -124,15 +135,6 @@ export default class FarFetch {
     this.errorHandler = errorHandler;
     this.errorMsgTemplate = errorMsgTemplate;
     this.defaultOptions = defaultOptions;
-  }
-
-  /**
-   * Set default options.
-   *
-   * @param {...RequestOptions} [options]
-   */
-  setDefaultOptions(options) {
-    this.defaultOptions = { ...this.defaultOptions, ...options };
   }
 
   /**
@@ -222,7 +224,7 @@ export default class FarFetch {
    * @param {object.<string, string|number|null|boolean>} [options.data = {}] - Data sent to server
    * on request.
    * @param {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
-   * options specified on instantiation or with `setDefaultOptions()`?
+   * options specified on instantiation or with return value of `beforeSend()`?
    * @param {File|File[]|object.<string, File>|object.<string, File[]>} [files] - Files to upload to
    * server.
    * @param {...object} [rest = {}] -
@@ -231,6 +233,7 @@ export default class FarFetch {
    */
   setFetchOptions({
     data = {},
+    beforeSendOptions,
     defaultOptionsUsed,
     files,
     ...rest
@@ -244,7 +247,18 @@ export default class FarFetch {
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
     if (defaultOptionsUsed) {
-      options = { ...this.defaultOptions, ...rest };
+      let { defaultOptions } = this;
+
+      if (beforeSendOptions !== undefined) { // If beforeSend() has return value
+        if (!FarFetchHelper.isPlainObject(beforeSendOptions)) {
+          throw new TypeError('Return value of beforeSend() must be plain object');
+        }
+
+        // Deep merge default options and beforeSend() options; beforeSendOptions takes precedence
+        defaultOptions = deepMerge(defaultOptions, beforeSendOptions);
+      }
+
+      options = { ...defaultOptions, ...rest };
     } else {
       options = rest;
     }
@@ -330,13 +344,16 @@ export default class FarFetch {
     defaultOptionsUsed = true,
     ...rest
   }) {
+    let beforeSendOptions;
+
     // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
-      this.beforeSend(); // Do something before every request
+      beforeSendOptions = this.beforeSend(); // Do something before every request
     }
 
     const { queryString, options } = this.setFetchOptions({
       data,
+      beforeSendOptions,
       defaultOptionsUsed,
       files,
       ...rest,
