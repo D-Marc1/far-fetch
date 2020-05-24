@@ -24,6 +24,7 @@
     "@babel/core": "^7.9.6",
     "@babel/plugin-proposal-optional-chaining": "^7.9.0",
     "@babel/preset-env": "^7.9.6",
+    "@release-it/keep-a-changelog": "^1.0.1",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
     "babel-preset-airbnb": "^5.0.0",
@@ -57,5 +58,10 @@
   },
   "files": [
     "dist/*"
-  ]
+  ],
+  "plugins": {
+    "@release-it/keep-a-changelog": {
+      "filename": "CHANGELOG.md"
+    }
+  }
 }
