@@ -490,6 +490,24 @@ const ff = new FarFetch({
 });
 ```
 
+You can also use any [Init
+options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters)
+from Fetch API as the return to add or override an option.
+
+```js
+beforeSend() {
+  // Use authorization header if token set in localStorage
+  if (localStorage.getItem('token')) {
+    return {
+      headers: {
+        'Content-Type': 'text/plain',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    };
+  }
+}
+```
+
 ### Turn off Before/After Send Hook on Single Request
 
 You might want to use the `beforeSend()` or `afterSend(response)` hook on nearly

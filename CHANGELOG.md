@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.9] - 2020-05-24
+## [1.1.0] - 2020-05-24
 
 ### Changed
 - Remove `setDefaultOptions()`, in favor of simply returning object on
