@@ -1,6 +1,6 @@
 {
   "name": "@websitebeaver/far-fetch",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Modern Fetch API wrapper for simplicity.",
   "main": "./dist/far-fetch.bundle.js",
   "scripts": {
