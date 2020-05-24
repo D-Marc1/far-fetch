@@ -59,9 +59,11 @@
   "files": [
     "dist/*"
   ],
-  "plugins": {
-    "@release-it/keep-a-changelog": {
-      "filename": "CHANGELOG.md"
+  "release-it": {
+    "plugins": {
+      "@release-it/keep-a-changelog": {
+        "filename": "CHANGELOG.md"
+      }
     }
   }
 }
