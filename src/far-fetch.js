@@ -247,7 +247,7 @@ export default class FarFetch {
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
     if (defaultOptionsUsed) {
-      let defaultOptions = { ...this.defaultOptions };
+      let defaultOptions = deepMerge({}, this.defaultOptions);
 
       if (beforeSendOptions !== undefined) { // If beforeSend() has return value
         if (!FarFetchHelper.isPlainObject(beforeSendOptions)) {
