@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2020-05-24
+
+## Fixed
+
+- Issue where options set in constructor gets overwritten and add deepMerge. Now
+  it is actually fixed, as the root problem was the initial local variable
+  shallow clone set.
+
 ## [1.1.2] - 2020-05-24
 
 ## Fixed
