@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.3] - 2020-05-24
 
-## Fixed
+### Fixed
 
 - Issue where options set in constructor gets overwritten and add deepMerge. Now
   it is actually fixed, as the root problem was the initial local variable
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.2] - 2020-05-24
 
-## Fixed
+### Fixed
 
 - Issue where options set in constructor gets overwritten and add deepMerge.
 - Issue where POST overwrites headers.
