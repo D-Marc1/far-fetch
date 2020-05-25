@@ -1,4 +1,4 @@
-import deepMerge from 'lodash.merge';
+import deepMerge from 'deepmerge';
 
 import FarFetchHelper from './far-fetch-helper';
 import FarFetchError from './far-fetch-error';
