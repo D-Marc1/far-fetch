@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2020-05-24
+
+### Fixed
+
+- Issue where init options would get cached if not reloaded, due to lodash merge
+  mutating original. New [deepmerge](https://github.com/TehShrike/deepmerge)
+  fixes this issue.
+
 ## [1.1.0] - 2020-05-24
 
 ### Changed
