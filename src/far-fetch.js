@@ -247,7 +247,7 @@ export default class FarFetch {
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
     if (defaultOptionsUsed) {
-      let { defaultOptions } = this;
+      let defaultOptions = { ...this.defaultOptions };
 
       if (beforeSendOptions !== undefined) { // If beforeSend() has return value
         if (!FarFetchHelper.isPlainObject(beforeSendOptions)) {
@@ -258,7 +258,8 @@ export default class FarFetch {
         defaultOptions = deepMerge(defaultOptions, beforeSendOptions);
       }
 
-      options = { ...defaultOptions, ...rest };
+      // Deep merge with single request; single request takes precedence
+      options = deepMerge(defaultOptions, rest);
     } else {
       options = rest;
     }
@@ -280,7 +281,7 @@ export default class FarFetch {
       } else if (options.method === 'POST' || options.method === 'PUT'
         || options.method === 'PATCH') {
         // JSON content-type header is necessary to match JSON body
-        options = { ...options, headers: { 'Content-Type': 'application/json' } };
+        options = deepMerge(options, { headers: { 'Content-Type': 'application/json' } });
 
         options.body = JSON.stringify(data);
       }
