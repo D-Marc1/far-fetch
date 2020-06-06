@@ -302,8 +302,8 @@ export default class FarFetch {
     const responseContentTypeJson = responseContentType?.includes('application/json');
     const responseContentTypeText = responseContentType?.includes('text/plain');
 
-    /* Transforming body, like calling json(), can only be used once, so clone is needed to keep
-    original. Also needed to clone parameter to prevent mutating it. */
+    // Transforming body, like calling json(), can only be used once, so clone is needed to keep
+    // original. Also needed to clone parameter to prevent mutating it.
     const modifiedResponse = response.clone();
 
     modifiedResponse.responseJSON = null;

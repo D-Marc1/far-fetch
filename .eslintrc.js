@@ -12,21 +12,13 @@ module.exports = {
     'airbnb-base',
     'plugin:compat/recommended',
     'plugin:jest/recommended',
-    'plugin:import/errors',
-    'plugin:import/warnings',
-    'plugin:import/typescript',
   ],
   rules: {
     // we should always disable console logs and debugging in production
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    'no-empty': ['error', { allowEmptyCatch: true }],
-    'no-param-reassign': [2, {
-      props: false,
-    }],
-    'no-restricted-syntax': ['error', 'WithStatement', 'LabeledStatement'],
-    'import/no-unresolved': 'off',
-    'babel/camelcase': 1,
+    'default-case': 'off',
+    'jest/expect-expect': 'off',
   },
   plugins: [
     'babel',

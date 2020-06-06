@@ -1,4 +1,3 @@
-/* eslint-disable jest/expect-expect */
 import deepMerge from 'deepmerge';
 
 import fetchMock from 'fetch-mock-jest';
