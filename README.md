@@ -90,7 +90,6 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [farFetch.head(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchheadurl-options--promiseresponseplus)
   - [FarFetchError ⇐ <code>Error</code>](#farfetcherror--error)
     - [new FarFetchError(message)](#new-farfetcherrormessage)
-  - [beforeSendCallback ⇒ <code>object</code> \| <code>undefined</code>](#beforesendcallback--object--undefined)
 
 ## Passing in Data to Request
 
