@@ -217,7 +217,7 @@ export default class FarFetch {
   }
 
   /**
-   * Set options to confrom to FarFetch
+   * Set options to conform to FarFetch
    *
    * @private
    * @param {object} options
