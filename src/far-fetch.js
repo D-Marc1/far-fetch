@@ -293,7 +293,7 @@ export default class FarFetch {
   /**
    * @private
    * @param {Response} response - Fetch API response object.
-   * @returns {Response} - Modified response object with responseJSON and responseText properties as
+   * @returns {Promise<Response>} - Modified response object with responseJSON and responseText properties as
    * transformed body for syntactic sugar.
    */
   static async modifiedResponse(response) {
@@ -374,23 +374,23 @@ export default class FarFetch {
 
       if (!response.ok) throw new FarFetchError('Server error.');
     } catch (error) {
+      // Global error handler needs to be declared and either
+      // an entire errorMsg or just the appended errorMsgNoun need to be declared
+      if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
+        response = await FarFetch.modifiedResponse(response);
+
+        const userMessage = this.userMessage({
+          errorMsg,
+          errorMsgNoun,
+          method: options.method,
+        });
+
+        this.errorHandler({ error, response, userMessage });
+      }
+
+      // Throw request object to all manually handling exception and stop execution for sequential
+      // tasks
       if (error instanceof FarFetchError) {
-        // Global error handler needs to be declared and either
-        // an entire errorMsg or just the appended errorMsgNoun need to be declared
-        if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
-          response = await FarFetch.modifiedResponse(response);
-
-          const userMessage = this.userMessage({
-            errorMsg,
-            errorMsgNoun,
-            method: options.method,
-          });
-
-          this.errorHandler({ error, response, userMessage });
-        }
-
-        // Throw request object to all manually handling exception and stop execution for sequential
-        // tasks
         throw new FarFetchError({ error, response });
       } else {
         throw error;
