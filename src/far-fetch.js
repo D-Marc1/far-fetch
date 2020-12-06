@@ -275,7 +275,13 @@ export default class FarFetch {
     // Data object has at least one property
     } else if (Object.keys(data).length > 0 || Object.keys(URLParams).length > 0) {
       if (Object.keys(URLParams).length > 0) {
-        queryString = `?${new URLSearchParams(Object.entries(URLParams))}`;
+        const URLParamsStringified = Object.entries(URLParams).map(([key, value]) => {
+          const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
+
+          return [key, valueStringified];
+        });
+
+        queryString = `?${new URLSearchParams(URLParamsStringified)}`;
       }
 
       // Default is URL query string. GET/HEAD can't be used with body. Body is optional for DELETE.
@@ -286,7 +292,15 @@ export default class FarFetch {
           the same affect, but prefer 'data' in this case for consistency.`);
         }
 
-        queryString = `?${new URLSearchParams(Object.entries(data))}`;
+        const dataStringified = Object.entries(data).map(([key, value]) => {
+          const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
+
+          return [key, valueStringified];
+        });
+
+        if (Object.keys(data).length > 0) {
+          queryString = `?${new URLSearchParams(dataStringified)}`;
+        }
       } else if (isFormURLEncoded) { // FormURLEncoded requires URL params in body
         options.body = new URLSearchParams(Object.entries(data));
       } else if (options.method === 'POST' || options.method === 'PUT'
