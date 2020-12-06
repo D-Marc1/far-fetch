@@ -370,7 +370,8 @@ be evaluated when you instantiate the class, since it won't work properly if a
 user accesses the page logged out. The header would never reevaluate. This is
 why `FarFetch` has allows you to return options you want to use on specific
 conditions on the global `beforeSend()` function. These options will then get
-deep merged, with the `beforeSend()` return taking precedence.
+deep merged, with the `beforeSend()` return taking precedence. Obviously passing
+options into a specific request will take the highest precedence of them all, however.
 
 ```js
 const ff = new FarFetch({
