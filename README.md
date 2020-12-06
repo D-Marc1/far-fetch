@@ -668,15 +668,13 @@ async register(type) {
 
       if (response.status === 409) { // Conflict
         userMessage = 'Email is already in system';
-
-        ff.errorHandler({ error, response, userMessage });
       } else if (response.status === 400) { // Validation failed
         const { field, validationMsg } = response.responseJSON;
 
         userMessage = `${field} is ${validationMsg}`;
-
-        ff.errorHandler({ error, response, userMessage });
       }
+      
+      ff.errorHandler({ error, response, userMessage });
     } else {
       userMessage = e.message;
 
