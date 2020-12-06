@@ -293,8 +293,8 @@ export default class FarFetch {
   /**
    * @private
    * @param {Response} response - Fetch API response object.
-   * @returns {Promise<Response>} - Modified response object with responseJSON and responseText properties as
-   * transformed body for syntactic sugar.
+   * @returns {Promise<ResponsePlus>} - Modified response object with responseJSON and responseText
+   * properties as transformed body for syntactic sugar.
    */
   static async modifiedResponse(response) {
     const responseContentType = response.headers?.get('Content-Type');
@@ -373,11 +373,20 @@ export default class FarFetch {
       response = await fetch(fullURL, options);
 
       if (!response.ok) throw new FarFetchError('Server error.');
+
+      response = await FarFetch.modifiedResponse(response);
+
+      // If globalAfterSend option is set to true and afterSend() declared on instantiation
+      if (globalAfterSend && typeof this.afterSend === 'function') {
+        this.afterSend(response);
+      }
     } catch (error) {
       // Global error handler needs to be declared and either
       // an entire errorMsg or just the appended errorMsgNoun need to be declared
       if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
-        response = await FarFetch.modifiedResponse(response);
+        if (error instanceof FarFetchError) {
+          response = await FarFetch.modifiedResponse(response);
+        }
 
         const userMessage = this.userMessage({
           errorMsg,
@@ -395,13 +404,6 @@ export default class FarFetch {
       } else {
         throw error;
       }
-    }
-
-    response = await FarFetch.modifiedResponse(response);
-
-    // If globalAfterSend option is set to true and beforeSend() declared on instantiation
-    if (globalAfterSend && typeof this.afterSend === 'function') {
-      this.afterSend(response);
     }
 
     return response;
