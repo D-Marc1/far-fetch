@@ -233,6 +233,7 @@ export default class FarFetch {
    */
   setFetchOptions({
     data = {},
+    URLParams = {},
     beforeSendOptions,
     defaultOptionsUsed,
     files,
@@ -272,9 +273,19 @@ export default class FarFetch {
       // File upload shouldn't have a content supplied; it will auto-detect
       delete options.headers?.['Content-Type'];
     // Data object has at least one property
-    } else if (Object.keys(data).length > 0) {
-      // Can't be used in body
+    } else if (Object.keys(data).length > 0 || Object.keys(URLParams).length > 0) {
+      if (Object.keys(URLParams).length > 0) {
+        queryString = `?${new URLSearchParams(Object.entries(URLParams))}`;
+      }
+
+      // Default is URL query string. GET/HEAD can't be used with body. Body is optional for DELETE.
       if (options.method === 'GET' || options.method === 'DELETE' || options.method === 'HEAD') {
+        if (Object.keys(data).length > 0 && Object.keys(URLParams).length > 0) {
+          throw new FarFetchError(`Don't use both 'data' and 'URLParams' together with GET, HEAD or 
+          DELETE, as they're redundant in these cases. Pick one or the other, as they will both have
+          the same affect, but prefer 'data' in this case for consistency.`);
+        }
+
         queryString = `?${new URLSearchParams(Object.entries(data))}`;
       } else if (isFormURLEncoded) { // FormURLEncoded requires URL params in body
         options.body = new URLSearchParams(Object.entries(data));
@@ -337,6 +348,7 @@ export default class FarFetch {
    */
   async fetch(url, {
     data = {},
+    URLParams = {},
     files,
     errorMsg = '',
     errorMsgNoun = '',
@@ -354,6 +366,7 @@ export default class FarFetch {
 
     const { queryString, options } = this.setFetchOptions({
       data,
+      URLParams,
       beforeSendOptions,
       defaultOptionsUsed,
       files,
@@ -384,7 +397,7 @@ export default class FarFetch {
       // Global error handler needs to be declared and either
       // an entire errorMsg or just the appended errorMsgNoun need to be declared
       if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
-        if (error instanceof FarFetchError) {
+        if (response) {
           response = await FarFetch.modifiedResponse(response);
         }
 
