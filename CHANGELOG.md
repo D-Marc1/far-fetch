@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2021-06-11
+
+### Changed
+
+- Global error handler to catch all exceptions, instead of just response errors.
+
+- Add ability to use `URLParams`, combined with `data` with `POST`, `PUT`, `PATCH`
+
+- `JSON.stringify` URL query params that have an object or array type as value
+
 ## [1.1.3] - 2020-05-24
 
 ### Fixed
