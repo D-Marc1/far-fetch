@@ -375,7 +375,14 @@ export default class FarFetch {
 
     // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
-      beforeSendOptions = this.beforeSend(); // Do something before every request
+      const isAsync = this.beforeSend.constructor.name === 'AsyncFunction';
+
+      // Await function if is async
+      if (isAsync) {
+        await this.beforeSend(); // Await and do something before every request
+      } else {
+        beforeSendOptions = this.beforeSend(); // Do something before every request
+      }
     }
 
     const { queryString, options } = this.setFetchOptions({
