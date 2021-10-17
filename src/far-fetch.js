@@ -243,10 +243,6 @@ export default class FarFetch {
 
     let queryString = '';
 
-    const contentTypeHeader = options.headers?.['Content-Type'];
-
-    const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
-
     if (defaultOptionsUsed) {
       let defaultOptions = deepMerge({}, this.defaultOptions);
 
@@ -264,6 +260,10 @@ export default class FarFetch {
     } else {
       options = rest;
     }
+
+    const contentTypeHeader = options.headers?.['Content-Type'];
+
+    const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
     if (files) { // Files property used, so must be upload
       const formData = FarFetch.createFormData({ files, data });
