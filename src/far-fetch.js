@@ -53,6 +53,9 @@ export { FarFetchError };
  * Callback for global after send hook.
  *
  * @callback beforeSendCallback
+ * @param {object} [options]
+ * @param {string} [options.url] - The URL.
+ * @param {...RequestOptions} [options.requestOptions]
  * @returns {object|undefined} If return value is set, will deep merge it with options set in
  * constructor.
  */
@@ -94,6 +97,7 @@ export default class FarFetch {
    *
    * @param {object} [options = {}] - Set options.
    * @param {string} [options.baseURL = ''] - Base URL for each request.
+   * @param {string} [options.localBaseURL = '']
    * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
    * each fetch request. Can return object with RequestOptions to add or override options.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
@@ -101,7 +105,7 @@ export default class FarFetch {
    * @param {errorHandlerCallback} [options.errorHandler] - Global error handler.
    * @param {errorMsgTemplateCallback} [options.errorMsgTemplate] - Function to modify the default
    * error message template for `errorMsgNoun`.
-   * @param {...RequestOptions} [options.RequestOptions]
+   * @param {...RequestOptions} [options.requestOptions]
    *
    * @example
    * const ff = new FarFetch({
@@ -123,6 +127,7 @@ export default class FarFetch {
    */
   constructor({
     baseURL = '',
+    localBaseURL = '',
     beforeSend,
     afterSend,
     errorHandler,
@@ -130,6 +135,7 @@ export default class FarFetch {
     ...defaultOptions
   } = {}) {
     this.baseURL = baseURL;
+    this.localBaseURL = localBaseURL;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
     this.errorHandler = errorHandler;
@@ -265,6 +271,16 @@ export default class FarFetch {
 
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
+    if (Object.keys(URLParams).length > 0) {
+      const URLParamsStringified = Object.entries(URLParams).map(([key, value]) => {
+        const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
+
+        return [key, valueStringified];
+      });
+
+      queryString = `?${new URLSearchParams(URLParamsStringified)}`;
+    }
+
     if (files) { // Files property used, so must be upload
       const formData = FarFetch.createFormData({ files, data });
 
@@ -274,15 +290,15 @@ export default class FarFetch {
       delete options.headers?.['Content-Type'];
     // Data object has at least one property
     } else if (Object.keys(data).length > 0 || Object.keys(URLParams).length > 0) {
-      if (Object.keys(URLParams).length > 0) {
-        const URLParamsStringified = Object.entries(URLParams).map(([key, value]) => {
-          const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
+      // if (Object.keys(URLParams).length > 0) {
+      //   const URLParamsStringified = Object.entries(URLParams).map(([key, value]) => {
+      //     const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
 
-          return [key, valueStringified];
-        });
+      //     return [key, valueStringified];
+      //   });
 
-        queryString = `?${new URLSearchParams(URLParamsStringified)}`;
-      }
+      //   queryString = `?${new URLSearchParams(URLParamsStringified)}`;
+      // }
 
       // Default is URL query string. GET/HEAD can't be used with body. Body is optional for DELETE.
       if (options.method === 'GET' || options.method === 'DELETE' || options.method === 'HEAD') {
@@ -377,11 +393,26 @@ export default class FarFetch {
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
       const isAsync = this.beforeSend.constructor.name === 'AsyncFunction';
 
+      const beforeSendObjectParameters = {
+        url,
+        fetchAPIOptions: rest,
+        data,
+        URLParams,
+        files,
+        errorMsg,
+        errorMsgNoun,
+        globalBeforeSend,
+        globalAfterSend,
+        defaultOptionsUsed,
+      };
+
       // Await function if is async
       if (isAsync) {
-        await this.beforeSend(); // Await and do something before every request
+        // Await and do something before every request
+        await this.beforeSend(beforeSendObjectParameters);
       } else {
-        beforeSendOptions = this.beforeSend(); // Do something before every request
+        // Do something before every request
+        beforeSendOptions = this.beforeSend(beforeSendObjectParameters);
       }
     }
 
@@ -400,8 +431,15 @@ export default class FarFetch {
       let fullURL = `${url}${queryString}`;
 
       // Base URL is given and URL on request is a relative path
-      if (this.baseURL && !FarFetchHelper.isAbsoluteURL(url)) {
-        fullURL = `${this.baseURL}${fullURL}`;
+      if ((this.baseURL || this.localBaseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
+        let prependURL = this.baseURL;
+
+        // Local base URL is given and is the current URL. Working locally.
+        if (this.localBaseURL && window.location.hostname === this.localBaseURL) {
+          prependURL = this.localBaseURL;
+        }
+
+        fullURL = `${prependURL}${fullURL}`;
       }
 
       response = await fetch(fullURL, options);

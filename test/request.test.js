@@ -158,15 +158,11 @@ describe('testing upload', () => {
       }),
     };
 
-    const { photos, videos, document } = files;
-
     const filesFlattened = Object.values(files).flat();
 
     fetchMock[headerType]('http://example.com/uploadMultipleCat', 200);
 
-    await ff[headerType]('http://example.com/uploadMultipleCat', {
-      files: { photos, videos, document },
-    });
+    await ff[headerType]('http://example.com/uploadMultipleCat', { files });
 
     const bodyValues = fetchMock.mock.calls[0][1].body.values();
 
@@ -208,13 +204,34 @@ describe('testing options on instantiation', () => {
   });
 
   it('should NOT accept baseURL option with absolute path', async () => {
-    const ff = new FarFetch({ baseURL: 'http://example.com/' });
+    const ff = new FarFetch({ baseURL: 'http://example.com' });
 
     fetchMock.get('https://notexample.com/users4', 200);
 
     const response = await ff.get('https://notexample.com/users4');
 
     expect(response.url).toEqual('https://notexample.com/users4');
+  });
+
+  it('should set localBaseURL when specified', async () => {
+    const baseURL = 'http://example.com';
+    const localBaseURL = 'http://localhost';
+    const path = '/usersdjfnvf';
+
+    delete global.window.location;
+    global.window = Object.create(window);
+    global.window.location = {
+      protocol: 'http:',
+      hostname: localBaseURL,
+    };
+
+    const ff = new FarFetch({ baseURL, localBaseURL });
+
+    fetchMock.get(`${localBaseURL}${path}`, 200);
+
+    const response = await ff.get(path);
+
+    expect(response.url).toEqual(`${localBaseURL}${path}`);
   });
 
   it('should accept Fetch API init options on the constructor', async () => {
@@ -236,7 +253,7 @@ describe('testing options on instantiation', () => {
     expect(fetchMock.mock.calls[0][1]).toEqual(initOptions);
   });
 
-  it(`should set Fetch API init options on both the consturctor and with beforeSend() return, but
+  it(`should set Fetch API init options on both the constructor and with beforeSend() return, but
   give beforeSend() return precedence`, async () => {
     const defaultOptions = {
       headers: { 'Content-Type': 'application/json' },
@@ -273,9 +290,9 @@ describe('testing options on instantiation', () => {
 
     fetchMock.get('http://example.com/usersdgdjj', 200);
 
-    await expect(
-      ff.get('http://example.com/usersdgdjj'),
-    ).rejects.toThrow(TypeError);
+    await expect(ff.get('http://example.com/usersdgdjj')).rejects.toThrow(
+      TypeError,
+    );
   });
 
   it('should NOT accept Fetch API init options when defaultOptionsUsed is set to false', async () => {
@@ -294,7 +311,10 @@ describe('testing options on instantiation', () => {
 
     const computedOptionsMock = jest.fn(() => initOptionsComputed);
 
-    const ff = new FarFetch({ ...initOptions, computedOptions: computedOptionsMock });
+    const ff = new FarFetch({
+      ...initOptions,
+      computedOptions: computedOptionsMock,
+    });
 
     fetchMock.get('http://example.com/usersoo', 200);
 
@@ -312,12 +332,11 @@ describe('testing options on instantiation', () => {
 
     const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
-    fetchMock
-      .post('http://example.com/usersddz', {
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        status: 400,
-      });
+    fetchMock.post('http://example.com/usersddz', {
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      status: 400,
+    });
 
     await expect(
       ff.post('http://example.com/usersddz', { errorMsgNoun: 'user' }),
@@ -400,16 +419,59 @@ describe('testing options on instantiation', () => {
     expect(userMessage).toEqual('Violation with user');
   });
 
-  it('should run beforeSend() hook function', async () => {
-    const beforeSendMock = jest.fn();
+  it('should run beforeSend() hook function and accept requestOptions parameter', async () => {
+    const beforeSendMock = jest.fn((options) => options);
 
     const ff = new FarFetch({ beforeSend: beforeSendMock });
 
-    fetchMock.get('http://example.com/usersddzz', 200);
+    const requestData = { name: 'Bobby Big Boy', gender: 'Male' };
 
-    await ff.get('http://example.com/usersddzz');
+    const requestParamsData = { age: 5 };
+
+    const requestParams = new URLSearchParams(requestParamsData);
+
+    const file = new File(['foo'], 'foo.txt', {
+      type: 'text/plain',
+    });
+
+    const URLWithParams = `http://example.com/usersddzz?${requestParams}`;
+
+    const requestErrorMsg = 'Error adding this particular user';
+
+    fetchMock.post(URLWithParams, 200);
+
+    await ff.post('http://example.com/usersddzz', {
+      errorMsg: requestErrorMsg,
+      errorMsgNoun: 'user',
+      data: requestData,
+      URLParams: requestParamsData,
+      cache: 'force-cache',
+      files: file,
+    });
 
     expect(beforeSendMock).toHaveBeenCalled();
+
+    const {
+      url,
+      errorMsg,
+      errorMsgNoun,
+      fetchAPIOptions: { cache },
+      data,
+      files,
+      globalBeforeSend,
+      globalAfterSend,
+      defaultOptionsUsed,
+    } = beforeSendMock.mock.calls[0][0];
+
+    expect(url).toBe('http://example.com/usersddzz');
+    expect(errorMsg).toBe(requestErrorMsg);
+    expect(errorMsgNoun).toBe('user');
+    expect(cache).toBe('force-cache');
+    expect(data).toBe(requestData);
+    expect(files).toEqual(file);
+    expect(globalBeforeSend).toBe(true);
+    expect(globalAfterSend).toBe(true);
+    expect(defaultOptionsUsed).toBe(true);
   });
 
   it('should NOT run beforeSend() hook function', async () => {
@@ -447,13 +509,15 @@ describe('testing options on instantiation', () => {
 
     fetchMock.get('http://example.com/usersddzzccll', 200);
 
-    await ff.get('http://example.com/usersddzzccll', { globalAfterSend: false });
+    await ff.get('http://example.com/usersddzzccll', {
+      globalAfterSend: false,
+    });
 
     expect(afterSendMock).not.toHaveBeenCalled();
   });
 });
 
-describe('it should automatically transform response body, but allow manual as well', () => {
+describe('testing automatically transforming response body, but allowing manual as well', () => {
   it('should transform the response body to JSON if response header is JSON content-type, but still be able do it manually as well', async () => {
     const afterSendMock = jest.fn((response) => response);
 
