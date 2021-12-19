@@ -390,6 +390,25 @@ describe('testing options on instantiation', () => {
     expect(errorHandlerMock).not.toHaveBeenCalled();
   });
 
+  it('should allow async errorHandler()', async () => {
+    const asyncValue = 43;
+    const errorHandlerMock = jest.fn().mockResolvedValue(asyncValue);
+
+    const ff = new FarFetch({
+      async errorHandler() {
+        const errorHandlerMockValue = await errorHandlerMock();
+
+        expect(errorHandlerMockValue).toEqual(asyncValue);
+      },
+    });
+
+    fetchMock.get('http://example.com/usersddza567', 400);
+
+    await expect(
+      ff.get('http://example.com/usersddza567', { errorMsgNoun: 'user' }),
+    ).rejects.toThrow(FarFetchError);
+  });
+
   it('should set custom error template with errorMsgTemplate()', async () => {
     const errorHandlerMock = jest.fn(({ userMessage }) => userMessage);
 
@@ -486,6 +505,23 @@ describe('testing options on instantiation', () => {
     expect(beforeSendMock).not.toHaveBeenCalled();
   });
 
+  it('should allow async beforeSend()', async () => {
+    const asyncValue = 43;
+    const beforeSendMock = jest.fn().mockResolvedValue(asyncValue);
+
+    const ff = new FarFetch({
+      async beforeSend() {
+        const beforeSendMockValue = await beforeSendMock();
+
+        expect(beforeSendMockValue).toEqual(asyncValue);
+      },
+    });
+
+    fetchMock.get('http://example.com/usersddzzee44', 200);
+
+    await ff.get('http://example.com/usersddzzee44');
+  });
+
   it('should run afterSend() hook function and accept response parameter', async () => {
     const afterSendMock = jest.fn((response) => response);
 
@@ -514,6 +550,23 @@ describe('testing options on instantiation', () => {
     });
 
     expect(afterSendMock).not.toHaveBeenCalled();
+  });
+
+  it('should allow async afterSend()', async () => {
+    const asyncValue = 43;
+    const afterSendMock = jest.fn().mockResolvedValue(asyncValue);
+
+    const ff = new FarFetch({
+      async afterSend() {
+        const afterSendMockValue = await afterSendMock();
+
+        expect(afterSendMockValue).toEqual(asyncValue);
+      },
+    });
+
+    fetchMock.get('http://example.com/usersddzzccll9999', 200);
+
+    await ff.get('http://example.com/usersddzzccll9999');
   });
 });
 

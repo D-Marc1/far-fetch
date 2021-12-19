@@ -391,7 +391,7 @@ export default class FarFetch {
 
     // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
-      const isAsync = this.beforeSend.constructor.name === 'AsyncFunction';
+      const isBeforeSendAsync = this.beforeSend.constructor.name === 'AsyncFunction';
 
       const beforeSendObjectParameters = {
         url,
@@ -407,9 +407,9 @@ export default class FarFetch {
       };
 
       // Await function if is async
-      if (isAsync) {
+      if (isBeforeSendAsync) {
         // Await and do something before every request
-        await this.beforeSend(beforeSendObjectParameters);
+        beforeSendOptions = await this.beforeSend(beforeSendObjectParameters);
       } else {
         // Do something before every request
         beforeSendOptions = this.beforeSend(beforeSendObjectParameters);
@@ -450,7 +450,15 @@ export default class FarFetch {
 
       // If globalAfterSend option is set to true and afterSend() declared on instantiation
       if (globalAfterSend && typeof this.afterSend === 'function') {
-        this.afterSend(response);
+        const isAfterSendAsync = this.afterSend.constructor.name === 'AsyncFunction';
+
+        if (isAfterSendAsync) {
+          // Await and do something after every request
+          await this.afterSend(response);
+        } else {
+          // Do something after every request
+          this.afterSend(response);
+        }
       }
     } catch (error) {
       // Global error handler needs to be declared and either
@@ -466,7 +474,15 @@ export default class FarFetch {
           method: options.method,
         });
 
-        this.errorHandler({ error, response, userMessage });
+        const isErrorHandlerAsync = this.errorHandler.constructor.name === 'AsyncFunction';
+
+        if (isErrorHandlerAsync) {
+          // Await error handler
+          await this.errorHandler({ error, response, userMessage });
+        } else {
+          // Non-await error handler
+          this.errorHandler({ error, response, userMessage });
+        }
       }
 
       // Throw request object to all manually handling exception and stop execution for sequential
