@@ -31,16 +31,32 @@ describe('testing api calls', () => {
 describe('testing data parameters', () => {
   const ff = new FarFetch();
 
-  const queryStringTest = async (type) => {
-    const data = { name: 'Bobby Big Boy', gender: 'Male', age: '5' };
+  const queryStringTest = async ({ type, URLParams = false }) => {
+    const data = {
+      name: 'Bobby Big Boy',
+      gender: 'Male',
+      age: 5,
+      favoriteSports: ['Basketball', 'Footbal'],
+      height: { feet: 6, inches: 3 },
+    };
 
-    const params = new URLSearchParams(Object.entries(data));
+    const dataStringified = Object.entries(data).map(([key, value]) => {
+      const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
 
-    const URLWithParams = `http://example.com/users?${params}`;
+      return [key, valueStringified];
+    });
+
+    const params = `${new URLSearchParams(dataStringified)}`;
+
+    const url = `http://example.com/users${URLParams ? 'UP' : 'NoUP'}`;
+
+    const URLWithParams = `${url}?${params}`;
 
     fetchMock[type](URLWithParams, 200);
 
-    const response = await ff[type]('http://example.com/users', { data });
+    const options = URLParams ? { URLParams: data } : { data };
+
+    const response = await ff[type](url, options);
 
     expect(response.url).toEqual(URLWithParams);
   };
@@ -73,8 +89,14 @@ describe('testing data parameters', () => {
   };
 
   ['GET', 'HEAD', 'DELETE'].forEach((requestHeaderType) => {
-    it(`should successfully do a ${requestHeaderType} request with data parameters`, () => {
-      queryStringTest(requestHeaderType.toLowerCase());
+    it(`should successfully do a ${requestHeaderType} request with data parameters and automatically convert object and array types`, () => {
+      queryStringTest({ type: requestHeaderType.toLowerCase() });
+    });
+  });
+
+  ['GET', 'HEAD', 'DELETE'].forEach((requestHeaderType) => {
+    it(`should successfully do a ${requestHeaderType} request with URLParams parameters and automatically convert object and array types`, () => {
+      queryStringTest({ type: requestHeaderType.toLowerCase(), URLParams: true });
     });
   });
 
@@ -84,7 +106,7 @@ describe('testing data parameters', () => {
     });
   });
 
-  ['POST', 'PUT', 'PATCH'].forEach((requestHeaderType) => {
+  ['DELETE', 'POST', 'PUT', 'PATCH'].forEach((requestHeaderType) => {
     it(`should accept body property with a ${requestHeaderType} request`, () => {
       bodyVanillaTest(requestHeaderType.toLowerCase());
     });

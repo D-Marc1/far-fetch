@@ -308,13 +308,13 @@ export default class FarFetch {
           the same affect, but prefer 'data' in this case for consistency.`);
         }
 
-        const dataStringified = Object.entries(data).map(([key, value]) => {
-          const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
-
-          return [key, valueStringified];
-        });
-
         if (Object.keys(data).length > 0) {
+          const dataStringified = Object.entries(data).map(([key, value]) => {
+            const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
+
+            return [key, valueStringified];
+          });
+
           queryString = `?${new URLSearchParams(dataStringified)}`;
         }
       } else if (isFormURLEncoded) { // FormURLEncoded requires URL params in body
