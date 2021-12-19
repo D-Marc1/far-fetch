@@ -485,7 +485,7 @@ const ff = new FarFetch({
     console.log('do this before every request');
   },
   afterSend(response) {
-    console.log('do this before every request');
+    console.log('do this after every request');
   },
 });
 ```
