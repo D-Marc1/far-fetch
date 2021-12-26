@@ -412,6 +412,18 @@ describe('testing options on instantiation', () => {
     expect(errorHandlerMock).not.toHaveBeenCalled();
   });
 
+  it('should catch any type of error in errorHandler() ', async () => {
+    const errorMessage = 'testing error';
+
+    const ff = new FarFetch({
+      errorHandler({ error }) {
+        expect(error.message).toBe(errorMessage);
+      },
+    });
+
+    ff.errorHandler({ error: new Error(errorMessage) });
+  });
+
   it('should allow async errorHandler()', async () => {
     const asyncValue = 43;
     const errorHandlerMock = jest.fn().mockResolvedValue(asyncValue);
