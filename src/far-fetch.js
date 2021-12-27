@@ -17,11 +17,10 @@ export { FarFetchError };
  * Request object plus responseJSON and responseText properties if correct header type.
  *
  * @typedef {object} ResponsePlus
- * @property {Response} response - Fetch API response
+ * @property {Response} response - Fetch API response.
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Response|Response object}.
  * @property {object} [response.responseJSON = null] - FarFetch added property that transforms the
- * body to
- * JSON for syntactic sugar if the same response header type.
+ * body to JSON for syntactic sugar if the same response header type.
  * @property {string} [response.responseText = null] - FarFetch added property that transforms the
  * body to text for syntactic sugar if the same response header type.
  */
@@ -30,14 +29,18 @@ export { FarFetchError };
  * The request object options.
  *
  * @typedef {object} RequestOptions
- * @property {object.<string, string|number|null|boolean>} [data = {}] - Data sent to server on
- * request.
+ * @property {object.<string, string|number|null|boolean|array|object>} [data = {}] - Data sent to
+ * server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET,
+ * HEAD, DELETE.
+ * @property {object.<string, string|number|null|boolean|array|object>} [URLParams = {}] - URL query
+ * params string. Don't use both `data` and `URLParams` together with GET, HEAD or DELETE, as
+ * they're redundant in these cases. Pick one or the other, as they will both have the same effect.
  * @property {File|File[]|object.<string, File>|object.<string, File[]>} [files] - Files to upload
  * to server.
  * Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys.
  * @property {string} [errorMsgNoun = ''] - Appended error message noun to global error handler.
  * @property {string} [errorMsg = ''] - Error message used to global error handler. Overrides
- * `errorMsgNoun`
+ * `errorMsgNoun`.
  * @property {boolean} [globalBeforeSend = true] - Will this specific request use the beforeSend()
  * hook?
  * @property {boolean} [globalAfterSend = true] - Will this specific request use the afterSend()
@@ -109,6 +112,7 @@ export default class FarFetch {
    *
    * @example
    * const ff = new FarFetch({
+   *   baseURL: 'https://my-url.com',
    *   beforeSend() {
    *     console.log('Doing something before every request');
    *   },
@@ -147,11 +151,13 @@ export default class FarFetch {
    * Creates FormData for file uploads.
    *
    * @private
-   * @param {object} [data = {}]
-   * @param {File|File[]|object.<string, File>|object.<string, File[]>} data.files - Files to
+   * @param {object} options
+   * @param {File|File[]|object.<string, File>|object.<string, File[]>} options.files - Files to
    * upload to server. Will use `file` as key if literal and `files[]` if array;
    * if object, will use properties as keys.
-   * @param {object.<string, string|number|null|boolean>} [data.data = {}] - Data sent to server.
+   * @property {object.<string, string|number|null|boolean|array|object>} [options.data = {}] - Data
+   * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
+   * for: GET, HEAD, DELETE.
    * @returns {FormData}
    */
   static createFormData({ files, data }) {
@@ -192,8 +198,12 @@ export default class FarFetch {
    * The default error message.
    *
    * @private
-   * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} method - The CRUD method.
-   * @param {string} errorMsgNoun - The error message noun.
+   * @param {object} options
+   * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} options.method - The CRUD method.
+   * @param {string} [options.errorMsgNoun = ''] - Appended error message noun to global error
+   * handler.
+   * @param {string} [options.errorMsg = ''] - Error message used to global error handler. Overrides
+   * `errorMsgNoun`
    * @returns {string} Full error message string.
    */
   userMessage({ method, errorMsg, errorMsgNoun }) {
@@ -227,13 +237,18 @@ export default class FarFetch {
    *
    * @private
    * @param {object} options
-   * @param {object.<string, string|number|null|boolean>} [options.data = {}] - Data sent to server
-   * on request.
-   * @param {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
-   * options specified on instantiation or with return value of `beforeSend()`?
-   * @param {File|File[]|object.<string, File>|object.<string, File[]>} [files] - Files to upload to
-   * server.
-   * @param {...object} [rest = {}] -
+   * @param {object.<string, string|number|null|boolean|array|object>} [options.data = {}] - Data
+   * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
+   * for: GET, HEAD, DELETE.
+   * @param {object.<string, string|number|null|boolean|array|object>} [options.URLParams = {}] -
+   * URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or
+   * DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the
+   * same effect.
+   * @param {boolean} [options.defaultOptionsUsed = true] - Will this specific request use the
+   * default options specified on instantiation or with return value of `beforeSend()`?
+   * @param {File|File[]|object.<string, File>|object.<string, File[]>} [options.files] - Files to
+   * upload to server.
+   * @param {...object} [options.rest = {}] -
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
    * from Fetch API.
    */
@@ -305,7 +320,7 @@ export default class FarFetch {
         if (Object.keys(data).length > 0 && Object.keys(URLParams).length > 0) {
           throw new FarFetchError(`Don't use both 'data' and 'URLParams' together with GET, HEAD or 
           DELETE, as they're redundant in these cases. Pick one or the other, as they will both have
-          the same affect, but prefer 'data' in this case for consistency.`);
+          the same effect, but prefer 'data' in this case for consistency.`);
         }
 
         if (Object.keys(data).length > 0) {
