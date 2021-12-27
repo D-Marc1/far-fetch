@@ -8,7 +8,7 @@ export { FarFetchError };
 /**
  * The Request exception object.
  *
- * @typedef {object} RequestException
+ * @typedef {Object} RequestException
  * @property {FarFetchError} error - FarFetch error.
  * @property {ResponsePlus} response - Fetch API response plus added properties for syntactic sugar.
  */
@@ -16,10 +16,10 @@ export { FarFetchError };
 /**
  * Request object plus responseJSON and responseText properties if correct header type.
  *
- * @typedef {object} ResponsePlus
+ * @typedef {Object} ResponsePlus
  * @property {Response} response - Fetch API response.
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Response|Response object}.
- * @property {object} [response.responseJSON = null] - FarFetch added property that transforms the
+ * @property {Object} [response.responseJSON = null] - FarFetch added property that transforms the
  * body to JSON for syntactic sugar if the same response header type.
  * @property {string} [response.responseText = null] - FarFetch added property that transforms the
  * body to text for syntactic sugar if the same response header type.
@@ -28,14 +28,14 @@ export { FarFetchError };
 /**
  * The request object options.
  *
- * @typedef {object} RequestOptions
- * @property {object.<string, string|number|null|boolean|array|object>} [data = {}] - Data sent to
+ * @typedef {Object} RequestOptions
+ * @property {Object.<string, string|number|null|boolean|Array|Object>} [data = {}] - Data sent to
  * server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET,
  * HEAD, DELETE.
- * @property {object.<string, string|number|null|boolean|array|object>} [URLParams = {}] - URL query
+ * @property {Object.<string, string|number|null|boolean|Array|Object>} [URLParams = {}] - URL query
  * params string. Don't use both `data` and `URLParams` together with GET, HEAD or DELETE, as
  * they're redundant in these cases. Pick one or the other, as they will both have the same effect.
- * @property {File|File[]|object.<string, File>|object.<string, File[]>} [files] - Files to upload
+ * @property {File|File[]|Object.<string, File>|Object.<string, File[]>} [files] - Files to upload
  * to server.
  * Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys.
  * @property {string} [errorMsgNoun = ''] - Appended error message noun to global error handler.
@@ -47,7 +47,7 @@ export { FarFetchError };
  * hook?
  * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
  * options specified on instantiation or with return value of `beforeSend()`?
- * @property {...object} [rest = {}] -
+ * @property {...Object} [rest = {}] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
  */
@@ -56,10 +56,10 @@ export { FarFetchError };
  * Callback for global after send hook.
  *
  * @callback beforeSendCallback
- * @param {object} [options]
+ * @param {Object} [options]
  * @param {string} [options.url] - The URL.
  * @param {...RequestOptions} [options.requestOptions]
- * @returns {object|undefined} If return value is set, will deep merge it with options set in
+ * @returns {Object|undefined} If return value is set, will deep merge it with options set in
  * constructor.
  */
 
@@ -75,7 +75,7 @@ export { FarFetchError };
  * Callback for global error handler.
  *
  * @callback errorHandlerCallback
- * @param {object} [options]
+ * @param {Object} [options]
  * @param {FarFetchError|Error} [options.error] - The FarFetchError option. Will throw regular error
  * if needed.
  * @param {ResponsePlus} [options.response] - Request object plus responseJSON and responseText
@@ -87,7 +87,7 @@ export { FarFetchError };
  * Callback for overriding default error message template.
  *
  * @callback errorMsgTemplateCallback
- * @param {object} [options]
+ * @param {Object} [options]
  * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} [options.method] - The CRUD method.
  * @param {string} [options.errorMsgNoun] - The error message noun.
  * @returns {string} Full error message string.
@@ -98,7 +98,7 @@ export default class FarFetch {
   /**
    * Create FarFetch object.
    *
-   * @param {object} [options = {}] - Set options.
+   * @param {Object} [options = {}] - Set options.
    * @param {string} [options.baseURL = ''] - Base URL for each request.
    * @param {string} [options.localBaseURL = '']
    * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
@@ -151,11 +151,11 @@ export default class FarFetch {
    * Creates FormData for file uploads.
    *
    * @private
-   * @param {object} options
-   * @param {File|File[]|object.<string, File>|object.<string, File[]>} options.files - Files to
+   * @param {Object} options
+   * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} options.files - Files to
    * upload to server. Will use `file` as key if literal and `files[]` if array;
    * if object, will use properties as keys.
-   * @property {object.<string, string|number|null|boolean|array|object>} [options.data = {}] - Data
+   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.data = {}] - Data
    * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
    * for: GET, HEAD, DELETE.
    * @returns {FormData}
@@ -198,7 +198,7 @@ export default class FarFetch {
    * The default error message.
    *
    * @private
-   * @param {object} options
+   * @param {Object} options
    * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} options.method - The CRUD method.
    * @param {string} [options.errorMsgNoun = ''] - Appended error message noun to global error
    * handler.
@@ -236,19 +236,19 @@ export default class FarFetch {
    * Set options to conform to FarFetch
    *
    * @private
-   * @param {object} options
-   * @param {object.<string, string|number|null|boolean|array|object>} [options.data = {}] - Data
+   * @param {Object} options
+   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.data = {}] - Data
    * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
    * for: GET, HEAD, DELETE.
-   * @param {object.<string, string|number|null|boolean|array|object>} [options.URLParams = {}] -
+   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.URLParams = {}] -
    * URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or
    * DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the
    * same effect.
    * @param {boolean} [options.defaultOptionsUsed = true] - Will this specific request use the
    * default options specified on instantiation or with return value of `beforeSend()`?
-   * @param {File|File[]|object.<string, File>|object.<string, File[]>} [options.files] - Files to
+   * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} [options.files] - Files to
    * upload to server.
-   * @param {...object} [options.rest = {}] -
+   * @param {...Object} [options.rest = {}] -
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
    * from Fetch API.
    */
@@ -378,7 +378,7 @@ export default class FarFetch {
    * Request function called on every CRUD function.
    *
    * @param {string} url - The URL.
-   * @param {object} options
+   * @param {Object} options
    * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD'} options.method - The CRUD method.
    * @param {...RequestOptions} [options.RequestOptions]
    * @returns {Promise<ResponsePlus>}
