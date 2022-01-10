@@ -47,20 +47,25 @@ export { FarFetchError };
  * hook?
  * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
  * options specified on instantiation or with return value of `beforeSend()`?
- * @property {...Object} [rest = {}] -
+ * @property {...RequestInit} [rest = {}] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
  */
 
 /**
- * Callback for global after send hook.
+ * Callback for global dynamic options.
+ *
+ * @callback dynamicOptionsCallback
+ * @returns {Object} Allows a dynamic option to be set, like a token stored in localStorage.
+ */
+
+/**
+ * Callback for global before send hook.
  *
  * @callback beforeSendCallback
  * @param {Object} [options]
  * @param {string} [options.url] - The URL.
  * @param {...RequestOptions} [options.requestOptions]
- * @returns {Object|undefined} If return value is set, will deep merge it with options set in
- * constructor.
  */
 
 /**
@@ -100,7 +105,9 @@ export default class FarFetch {
    *
    * @param {Object} [options = {}] - Set options.
    * @param {string} [options.baseURL = ''] - Base URL for each request.
-   * @param {string} [options.localBaseURL = '']
+   * @param {string} [options.localBaseURL = ''] - Local base URL for each request.
+   * @param {dynamicOptionsCallback} [options.dynamicOptions] - Function that allows a dynamic
+   * option to be set, like a token stored in localStorage.
    * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
    * each fetch request. Can return object with RequestOptions to add or override options.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
@@ -113,6 +120,16 @@ export default class FarFetch {
    * @example
    * const ff = new FarFetch({
    *   baseURL: 'https://my-url.com',
+   *   dynamicOptions() {
+   *     // Use authorization header if token set in localStorage
+   *     if (localStorage.getItem('token')) {
+   *       return {
+   *         headers: {
+   *           Authorization: `Bearer ${localStorage.getItem('token')}`,
+   *         },
+   *       }
+   *     }
+   *   },
    *   beforeSend() {
    *     console.log('Doing something before every request');
    *   },
@@ -132,6 +149,7 @@ export default class FarFetch {
   constructor({
     baseURL = '',
     localBaseURL = '',
+    dynamicOptions,
     beforeSend,
     afterSend,
     errorHandler,
@@ -140,58 +158,12 @@ export default class FarFetch {
   } = {}) {
     this.baseURL = baseURL;
     this.localBaseURL = localBaseURL;
+    this.dynamicOptions = dynamicOptions;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
     this.errorHandler = errorHandler;
     this.errorMsgTemplate = errorMsgTemplate;
     this.defaultOptions = defaultOptions;
-  }
-
-  /**
-   * Creates FormData for file uploads.
-   *
-   * @private
-   * @param {Object} options
-   * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} options.files - Files to
-   * upload to server. Will use `file` as key if literal and `files[]` if array;
-   * if object, will use properties as keys.
-   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.data = {}] - Data
-   * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
-   * for: GET, HEAD, DELETE.
-   * @returns {FormData}
-   */
-  static createFormData({ files, data }) {
-    const formData = new FormData();
-
-    Object.keys(data).forEach((key) => {
-      formData.append(key, data[key]); // Add parameters to formData
-    });
-
-    if (files instanceof File) { // Single, unnamed file
-      const file = files; // Set to be more readable and consistent, as it's singular
-
-      formData.append('file', file);
-    } else if (Array.isArray(files)) { // NOT specifying a name if array
-      files.forEach((file) => {
-        formData.append('files[]', file); // Server-side page will have a file array
-      });
-    } else if (FarFetchHelper.isPlainObject(files)) { // IS specifying a name if object
-      Object.keys(files).forEach((key) => {
-        const propFiles = files[key]; // Each object property representing distinct file category
-
-        if (propFiles instanceof File) { // Single, unnamed file
-          const propFile = propFiles; // Set to be more readable and consistent, as it's singular
-
-          formData.append(key, propFile);
-        } else if (Array.isArray(propFiles)) { // Array of files for object property
-          propFiles.forEach((propFile) => {
-            formData.append(`${key}[]`, propFile);
-          });
-        }
-      });
-    }
-
-    return formData;
   }
 
   /**
@@ -244,18 +216,20 @@ export default class FarFetch {
    * URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or
    * DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the
    * same effect.
+   * @param {Object} [options.dynamicOptions = {}] - Dynamic options to be set, like a token stored
+   * in localStorage.
    * @param {boolean} [options.defaultOptionsUsed = true] - Will this specific request use the
    * default options specified on instantiation or with return value of `beforeSend()`?
    * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} [options.files] - Files to
    * upload to server.
-   * @param {...Object} [options.rest = {}] -
+   * @param {...RequestInit} [options.rest = {}] -
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
    * from Fetch API.
    */
   setFetchOptions({
     data = {},
     URLParams = {},
-    beforeSendOptions,
+    dynamicOptions,
     defaultOptionsUsed,
     files,
     ...rest
@@ -267,13 +241,13 @@ export default class FarFetch {
     if (defaultOptionsUsed) {
       let defaultOptions = deepMerge({}, this.defaultOptions);
 
-      if (beforeSendOptions !== undefined) { // If beforeSend() has return value
-        if (!FarFetchHelper.isPlainObject(beforeSendOptions)) {
+      if (dynamicOptions !== undefined) { // If dynamicOptions() has return value
+        if (!FarFetchHelper.isPlainObject(dynamicOptions)) {
           throw new TypeError('Return value of beforeSend() must be plain object');
         }
 
         // Deep merge default options and beforeSend() options; beforeSendOptions takes precedence
-        defaultOptions = deepMerge(defaultOptions, beforeSendOptions);
+        defaultOptions = deepMerge(defaultOptions, dynamicOptions);
       }
 
       // Deep merge with single request; single request takes precedence
@@ -286,35 +260,17 @@ export default class FarFetch {
 
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
-    if (Object.keys(URLParams).length > 0) {
-      const URLParamsStringified = Object.entries(URLParams).map(([key, value]) => {
-        const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
-
-        return [key, valueStringified];
-      });
-
-      queryString = `?${new URLSearchParams(URLParamsStringified)}`;
-    }
+    queryString = FarFetchHelper.objectToQueryString(URLParams);
 
     if (files) { // Files property used, so must be upload
-      const formData = FarFetch.createFormData({ files, data });
+      const formData = FarFetchHelper.createFormData({ files, data });
 
       options.body = formData;
 
       // File upload shouldn't have a content supplied; it will auto-detect
       delete options.headers?.['Content-Type'];
     // Data object has at least one property
-    } else if (Object.keys(data).length > 0 || Object.keys(URLParams).length > 0) {
-      // if (Object.keys(URLParams).length > 0) {
-      //   const URLParamsStringified = Object.entries(URLParams).map(([key, value]) => {
-      //     const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
-
-      //     return [key, valueStringified];
-      //   });
-
-      //   queryString = `?${new URLSearchParams(URLParamsStringified)}`;
-      // }
-
+    } else if (Object.keys(data).length > 0) {
       // Default is URL query string. GET/HEAD can't be used with body. Body is optional for DELETE.
       if (options.method === 'GET' || options.method === 'DELETE' || options.method === 'HEAD') {
         if (Object.keys(data).length > 0 && Object.keys(URLParams).length > 0) {
@@ -323,17 +279,9 @@ export default class FarFetch {
           the same effect, but prefer 'data' in this case for consistency.`);
         }
 
-        if (Object.keys(data).length > 0) {
-          const dataStringified = Object.entries(data).map(([key, value]) => {
-            const valueStringified = typeof value === 'object' ? JSON.stringify(value) : value;
-
-            return [key, valueStringified];
-          });
-
-          queryString = `?${new URLSearchParams(dataStringified)}`;
-        }
+        queryString = FarFetchHelper.objectToQueryString(data);
       } else if (isFormURLEncoded) { // FormURLEncoded requires URL params in body
-        options.body = new URLSearchParams(Object.entries(data));
+        options.body = new URLSearchParams(data);
       } else if (options.method === 'POST' || options.method === 'PUT'
         || options.method === 'PATCH') {
         // JSON content-type header is necessary to match JSON body
@@ -402,15 +350,41 @@ export default class FarFetch {
     defaultOptionsUsed = true,
     ...rest
   }) {
-    let beforeSendOptions;
+    let dynamicOptions;
+
+    if (typeof this.dynamicOptions === 'function') {
+      const isDynamicOptionsAsync = this.dynamicOptions.constructor.name === 'AsyncFunction';
+
+      // Await function if is async
+      if (isDynamicOptionsAsync) {
+        // Await and do something before every request
+        dynamicOptions = await this.dynamicOptions();
+      } else {
+        // Do something before every request
+        dynamicOptions = this.dynamicOptions();
+      }
+    }
+
+    const { queryString, options } = this.setFetchOptions({
+      data,
+      URLParams,
+      dynamicOptions,
+      defaultOptionsUsed,
+      files,
+      ...rest,
+    });
 
     // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
       const isBeforeSendAsync = this.beforeSend.constructor.name === 'AsyncFunction';
 
+      // // Merges default request options set in instantiation with ones set in specific request.
+      // // Will obviously not have access to beforeSend() options returned.
+      // const fetchAPIOptions = deepMerge(this.defaultOptions, rest);
+
       const beforeSendObjectParameters = {
         url,
-        fetchAPIOptions: rest,
+        fetchAPIOptions: options,
         data,
         URLParams,
         files,
@@ -424,21 +398,12 @@ export default class FarFetch {
       // Await function if is async
       if (isBeforeSendAsync) {
         // Await and do something before every request
-        beforeSendOptions = await this.beforeSend(beforeSendObjectParameters);
+        await this.beforeSend(beforeSendObjectParameters);
       } else {
         // Do something before every request
-        beforeSendOptions = this.beforeSend(beforeSendObjectParameters);
+        this.beforeSend(beforeSendObjectParameters);
       }
     }
-
-    const { queryString, options } = this.setFetchOptions({
-      data,
-      URLParams,
-      beforeSendOptions,
-      defaultOptionsUsed,
-      files,
-      ...rest,
-    });
 
     let response = '';
 

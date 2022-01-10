@@ -275,14 +275,14 @@ describe('testing options on instantiation', () => {
     expect(fetchMock.mock.calls[0][1]).toEqual(initOptions);
   });
 
-  it(`should set Fetch API init options on both the constructor and with beforeSend() return, but
-  give beforeSend() return precedence`, async () => {
+  it(`should set Fetch API init options on both the constructor and with dynamicOptions() return,
+  but give dynamicOptions() return precedence`, async () => {
     const defaultOptions = {
       headers: { 'Content-Type': 'application/json' },
       cache: 'reload',
     };
 
-    const beforeSendOptions = {
+    const dynamicOptions = {
       headers: {
         'Content-Type': 'text/plain',
         Authorization: 'Bearer',
@@ -290,11 +290,11 @@ describe('testing options on instantiation', () => {
     };
 
     const ff = new FarFetch({
-      beforeSend: () => beforeSendOptions,
+      dynamicOptions: () => dynamicOptions,
       ...defaultOptions,
     });
 
-    const mergedOptions = deepMerge(defaultOptions, beforeSendOptions);
+    const mergedOptions = deepMerge(defaultOptions, dynamicOptions);
 
     fetchMock.get('http://example.com/usersdgd', 200);
 
@@ -305,9 +305,9 @@ describe('testing options on instantiation', () => {
     expect(fetchMock.mock.calls[0][1]).toEqual(mergedOptions);
   });
 
-  it('should throw a TypeError if beforeSend() return type is not a plain object', async () => {
+  it('should throw a TypeError if dynamicOptions() return type is not a plain object', async () => {
     const ff = new FarFetch({
-      beforeSend: () => 2,
+      dynamicOptions: () => 2,
     });
 
     fetchMock.get('http://example.com/usersdgdjj', 200);
@@ -335,7 +335,7 @@ describe('testing options on instantiation', () => {
 
     const ff = new FarFetch({
       ...initOptions,
-      computedOptions: computedOptionsMock,
+      dynamicOptions: computedOptionsMock,
     });
 
     fetchMock.get('http://example.com/usersoo', 200);
@@ -475,7 +475,11 @@ describe('testing options on instantiation', () => {
   it('should run beforeSend() hook function and accept requestOptions parameter', async () => {
     const beforeSendMock = jest.fn((options) => options);
 
-    const ff = new FarFetch({ beforeSend: beforeSendMock });
+    const ff = new FarFetch({
+      beforeSend: beforeSendMock,
+      dynamicOptions: () => ({ mode: 'no-cors' }),
+      keepalive: true,
+    });
 
     const requestData = { name: 'Bobby Big Boy', gender: 'Male' };
 
@@ -508,8 +512,9 @@ describe('testing options on instantiation', () => {
       url,
       errorMsg,
       errorMsgNoun,
-      fetchAPIOptions: { cache },
+      fetchAPIOptions: { cache, mode, keepalive },
       data,
+      URLParams,
       files,
       globalBeforeSend,
       globalAfterSend,
@@ -520,7 +525,10 @@ describe('testing options on instantiation', () => {
     expect(errorMsg).toBe(requestErrorMsg);
     expect(errorMsgNoun).toBe('user');
     expect(cache).toBe('force-cache');
+    expect(mode).toBe('no-cors');
+    expect(keepalive).toBe(true);
     expect(data).toBe(requestData);
+    expect(URLParams).toBe(requestParamsData);
     expect(files).toEqual(file);
     expect(globalBeforeSend).toBe(true);
     expect(globalAfterSend).toBe(true);
@@ -601,6 +609,23 @@ describe('testing options on instantiation', () => {
     fetchMock.get('http://example.com/usersddzzccll9999', 200);
 
     await ff.get('http://example.com/usersddzzccll9999');
+  });
+
+  it('should allow async dynamicOptions()', async () => {
+    const asyncValue = 43;
+    const dynamicOptionsMock = jest.fn().mockResolvedValue(asyncValue);
+
+    const ff = new FarFetch({
+      async dynamicOptions() {
+        const afterSendMockValue = await dynamicOptionsMock();
+
+        expect(afterSendMockValue).toEqual(asyncValue);
+      },
+    });
+
+    fetchMock.get('http://example.com/usersddzzccll999911', 200);
+
+    await ff.get('http://example.com/usersddzzccll999911');
   });
 });
 

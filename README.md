@@ -61,6 +61,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
   - [Instantiating Class](#instantiating-class)
   - [Why Use FarFetch?](#why-use-farfetch)
   - [Passing in Data to Request](#passing-in-data-to-request)
+    - [Passing in URLParams to Request](#passing-in-urlparams-to-request)
   - [Uploading Files](#uploading-files)
     - [Uploading One File](#uploading-one-file)
     - [Uploading Multiple Files](#uploading-multiple-files)
@@ -71,6 +72,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
   - [Getting Response](#getting-response)
     - [Retrieving Response Data](#retrieving-response-data)
   - [Set Base URL](#set-base-url)
+    - [Set Local Base URL](#set-local-base-url)
   - [Before/After Send Hook](#beforeafter-send-hook)
     - [Turn off Before/After Send Hook on Single Request](#turn-off-beforeafter-send-hook-on-single-request)
   - [Error Handling](#error-handling)
@@ -97,10 +99,10 @@ Passing in data in `Fetch API` is exceedingly inconsistent. In this regard, it
 really took a step backwards from how jQuery implemented passing in data, in my
 opinion, at least from a usability standpoint. Of course `Fetch API`'s `body`
 options offers more versatility, which is why `FarFetch` supports using `body`.
-However, it really shouldn't necessary in the majority of use cases. Adding data
-to a `GET` and `POST` request is done in two separate ways in `Fetch API`. `GET`
-requests must use appended URL query parameters, while `POST` requests generally
-use a stringified object used as the `body` property.
+However, it really shouldn't be necessary in the majority of use cases. Adding
+data to a `GET` and `POST` request is done in two separate ways in `Fetch API`.
+`GET` requests must use appended URL query parameters, while `POST` requests
+generally use a stringified object used as the `body` property.
 
 **Fetch API**
 
@@ -109,7 +111,7 @@ use a stringified object used as the `body` property.
 async getPerson() {
   const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
-  const queryString = `?${new URLSearchParams(Object.entries(data))}`;
+  const queryString = `?${new URLSearchParams(data)}`;
 
   const response = await fetch(`https://example.com/people${queryString}`, {
     method: 'GET',
@@ -142,7 +144,26 @@ async addPerson() {
   const response = await fetch(`https://example.com/people`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(Object.entries(data)),
+    body: new URLSearchParams(data),
+  });
+
+  if(!response.ok) throw new Error('Server error.');
+
+  return response.json();
+}
+
+// Array or Object as value
+async addPerson() {
+  const data = { 
+    name: 'Bobby Big Boy', 
+    hobbies: JSON.stringify(['collecting stamps' 'sports']),
+    location: JSON.stringify({ city: 'Miami', state: 'Florida' }),
+  };
+
+  const response = await fetch(`https://example.com/people`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   });
 
   if(!response.ok) throw new Error('Server error.');
@@ -181,15 +202,69 @@ async addPerson() {
 
   return responseJSON;
 }
+
+// Array or Object as value
+async addPerson() {
+  const data = { 
+    name: 'Bobby Big Boy', 
+    hobbies: ['collecting stamps' 'sports'],
+    location: { city: 'Miami', state: 'Florida' },
+  };
+
+  const response = await fetch(`https://example.com/people`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data,
+  });
+
+  if(!response.ok) throw new Error('Server error.');
+
+  return response.json();
+}
 ```
 
 Notice how each request is completely predictable in `FarFetch` and doesn't
 require you to throw an exception if it's not a status code in the `200-299`
-range (response.ok). Sure, using the native javascript `Fetch API` isn't
+range (`response.ok`). Sure, using the native javascript `Fetch API` isn't
 horrible anymore in regular Javascript, thanks to features like
-`URLSearchParams` and `Object.entries`, but it's so much easier to not have to
+`URLSearchParams`, but it's so much easier to not have to
 think much when you program. `FarFetch`'s consistent API makes it a breeze to
 make any sort of request.
+
+### Passing in URLParams to Request
+
+This is specifically for converting to a `URL query string`, which differs from
+`data`, which *detects* the default type (`body` or `query string`).
+
+It's recommended to strictly use the `URLParams` option in cases where `POST`,
+`POST` and `PATCH` are used, as the default behavior for passing in `data` in
+this case will result in passing in the object to `body`. You can still pass in
+`URLParams` on `GET`, `HEAD` and `DELETE`, but you can't combine it with `data`.
+This is for consistency purposes, as it would be confusing as to why you'd be
+using `data` and `URLParams` in the latter ones, as they would achieve the same
+result in this case. In fact, `FarFetch` even throws an exception in this
+senario.  
+
+```js
+async addPerson() {
+  const { responseJSON } = await ff.post('https://example.com/people', {
+    URLParams: { weight: 75 },
+    data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
+  });
+
+  return responseJSON;
+}
+```
+
+Converted to `Fetch API`, the following will result in:
+
+```js
+const response = await fetch(`https://example.com/people?weight=75`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Bobby Big Boy', gender: 'Male', age: 5 }),
+});
+```
 
 ## Uploading Files
 
@@ -472,6 +547,20 @@ will override the `baseURL`.
 
 ```js
 await ff.get('https://notexample.com/posts');
+```
+
+### Set Local Base URL
+
+This option allows you set a base URL that is solely used locally. If this
+option is set. `FarFetch` simply checks if the current URL is the local URL.
+This allows you to set both options, and will properly use the correct base URL,
+either locally or in production.
+
+```js
+const ff = new FarFetch({
+  localBaseURL: 'http://localhost:8080',
+  baseURL: 'https://example.com',
+});
 ```
 
 ## Before/After Send Hook
