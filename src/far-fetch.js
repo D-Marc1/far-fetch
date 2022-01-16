@@ -26,9 +26,9 @@ export { FarFetchError };
  */
 
 /**
- * The request object options.
+ * The request object options without Fetch API options.
  *
- * @typedef {Object} RequestOptions
+ * @typedef {Object} RequestOptionsNoInit
  * @property {Object.<string, string|number|null|boolean|Array|Object>} [data = {}] - Data sent to
  * server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET,
  * HEAD, DELETE.
@@ -47,16 +47,26 @@ export { FarFetchError };
  * hook?
  * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
  * options specified on instantiation or with return value of `beforeSend()`?
- * @property {...RequestInit} [rest = {}] -
+ */
+
+/**
+ * The request object options.
+ *
+ * @typedef {Object} RequestOptions
+ * @property {...RequestOptionsNoInit} [requestOptionsNoInit]
+ * @property {...RequestInit} [rest] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
  */
 
 /**
- * Callback for global dynamic options.
+ * Callback for global dynamic options. Allows a dynamic option to be set, like a token stored in
+ * localStorage.
  *
  * @callback dynamicOptionsCallback
- * @returns {Object} Allows a dynamic option to be set, like a token stored in localStorage.
+ * @returns {...RequestInit}
+ * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
+ * from Fetch API.
  */
 
 /**
@@ -65,7 +75,11 @@ export { FarFetchError };
  * @callback beforeSendCallback
  * @param {Object} [options]
  * @param {string} [options.url] - The URL.
- * @param {...RequestOptions} [options.requestOptions]
+ * @param {RequestInit} [options.fetchAPIOptions] -
+ * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
+ * from Fetch API.
+ * @param {...RequestOptionsNoInit} [options.requestOptions] - The request object options without
+ * Fetch API options.
  */
 
 /**
@@ -115,7 +129,9 @@ export default class FarFetch {
    * @param {errorHandlerCallback} [options.errorHandler] - Global error handler.
    * @param {errorMsgTemplateCallback} [options.errorMsgTemplate] - Function to modify the default
    * error message template for `errorMsgNoun`.
-   * @param {...RequestOptions} [options.requestOptions]
+   * @param {...RequestInit} [options.defaultOptions = {}] -
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
+   * from Fetch API.
    *
    * @example
    * const ff = new FarFetch({

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `dynamicOptions()` returns dynamic options instead of `beforeSend()`; accepts
+`await`.
+- `localBaseURL` option to automatically detect when working locally.
+- Missing testing.
+
+### Changed
+
+- `beforeSend()` callback parameter now has the current URL and all the request
+options as object parameters.
+- `beforeSend()` return is not longer used for dynamic options, as a dedicated
+`dynamicOptions()` function is now used for that.
+- `afterSend()` and `errorHandler` accept `await`.
+
+### Fixed
+
+- Minor typos in `README` and docs.
+
 ## [1.2.0-1] - 2021-10-17
 
 ### Changed

@@ -5,7 +5,7 @@ Modern Fetch API wrapper for simplicity.
 ## Install
 
 ```
-npm i @websitebeaver/far-fetch@next
+npm i @websitebeaver/far-fetch
 ```
 
 Then include it in the files you want to use it in like so:
@@ -49,10 +49,10 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
    allows both ways.
 2. Ability to ["automatically" throw and handle errors](#error-handling) for
    every call in a unified manner with a global error handler.
-3. Ability to use default [init options](#passing-in-fetch-api-init-options) on
-   every call.
+3. Ability to use default [request init options](#passing-in-fetch-api-init-options)
+   on every call.
 4. Ability to do actions before every request
-   with[`beforeSend()` and `afterSend(response)` hooks](#beforeafter-send-hook).
+   with [`beforeSend()` and `afterSend(response)` hooks](#beforeafter-send-hook).
 5. Ability to [pass data to each call in a consistent manner](#passing-in-data-to-request).
 6. Ability to [upload files](#uploading-files) in a consistent manner.
 
@@ -61,6 +61,10 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
   - [Instantiating Class](#instantiating-class)
   - [Why Use FarFetch?](#why-use-farfetch)
   - [Passing in Data to Request](#passing-in-data-to-request)
+    - [GET Request](#get-request)
+    - [POST Request](#post-request)
+    - [application/x-www-form-urlencoded Request](#applicationx-www-form-urlencoded-request)
+    - [Array or Object as Value Request](#array-or-object-as-value-request)
     - [Passing in URLParams to Request](#passing-in-urlparams-to-request)
   - [Uploading Files](#uploading-files)
     - [Uploading One File](#uploading-one-file)
@@ -69,6 +73,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
   - [Passing in Fetch API init options](#passing-in-fetch-api-init-options)
     - [Set Options for Single Request](#set-options-for-single-request)
     - [Set Global Options for Every Request](#set-global-options-for-every-request)
+    - [Set Dynamic Options for Every Request](#set-dynamic-options-for-every-request)
   - [Getting Response](#getting-response)
     - [Retrieving Response Data](#retrieving-response-data)
   - [Set Base URL](#set-base-url)
@@ -92,6 +97,12 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [farFetch.head(url, [...options]) ⇒ <code>Promise.&lt;ResponsePlus&gt;</code>](#farfetchheadurl-options--promiseresponseplus)
   - [FarFetchError ⇐ <code>Error</code>](#farfetcherror--error)
     - [new FarFetchError(message)](#new-farfetcherrormessage)
+  - [RequestException : <code>Object</code>](#requestexception--object)
+  - [ResponsePlus : <code>Object</code>](#responseplus--object)
+  - [RequestOptionsNoInit : <code>Object</code>](#requestoptionsnoinit--object)
+  - [RequestOptions : <code>Object</code>](#requestoptions--object)
+  - [dynamicOptionsCallback ⇒ <code>RequestInit</code>](#dynamicoptionscallback--requestinit)
+  - [beforeSendCallback : <code>function</code>](#beforesendcallback--function)
 
 ## Passing in Data to Request
 
@@ -104,10 +115,11 @@ data to a `GET` and `POST` request is done in two separate ways in `Fetch API`.
 `GET` requests must use appended URL query parameters, while `POST` requests
 generally use a stringified object used as the `body` property.
 
+### GET Request
+
 **Fetch API**
 
 ```js
-// GET
 async getPerson() {
   const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
@@ -121,44 +133,27 @@ async getPerson() {
 
   return response.json();
 }
+```
 
-// POST
-async addPerson() {
-  const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
+**FarFetch**
 
-  const response = await fetch(`https://example.com/people`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+```js
+async getPerson() {
+  const { responseJSON } = await ff.get('https://example.com/people', {
+    data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  if(!response.ok) throw new Error('Server error.');
-
-  return response.json();
+  return responseJSON;
 }
+```
 
-// application/x-www-form-urlencoded
+### POST Request
+
+**Fetch API**
+
+```js
 async addPerson() {
   const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
-
-  const response = await fetch(`https://example.com/people`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(data),
-  });
-
-  if(!response.ok) throw new Error('Server error.');
-
-  return response.json();
-}
-
-// Array or Object as value
-async addPerson() {
-  const data = { 
-    name: 'Bobby Big Boy', 
-    hobbies: JSON.stringify(['collecting stamps' 'sports']),
-    location: JSON.stringify({ city: 'Miami', state: 'Florida' }),
-  };
 
   const response = await fetch(`https://example.com/people`, {
     method: 'POST',
@@ -175,16 +170,6 @@ async addPerson() {
 **FarFetch**
 
 ```js
-// GET
-async getPerson() {
-  const { responseJSON } = await ff.get('https://example.com/people', {
-    data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
-  });
-
-  return responseJSON;
-}
-
-// POST
 async addPerson() {
   const { responseJSON } = await ff.post('https://example.com/people', {
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
@@ -192,8 +177,31 @@ async addPerson() {
 
   return responseJSON;
 }
+```
 
-// application/x-www-form-urlencoded
+### application/x-www-form-urlencoded Request
+
+**Fetch API**
+
+```js
+async addPerson() {
+  const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
+
+  const response = await fetch(`https://example.com/people`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(data),
+  });
+
+  if(!response.ok) throw new Error('Server error.');
+
+  return response.json();
+}
+```
+
+**FarFetch**
+
+```js
 async addPerson() {
   const { responseJSON } = await ff.post('https://example.com/people', {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -202,24 +210,41 @@ async addPerson() {
 
   return responseJSON;
 }
+```
 
-// Array or Object as value
+### Array or Object as Value Request
+
+**Fetch API**
+
+```js
 async addPerson() {
-  const data = { 
-    name: 'Bobby Big Boy', 
-    hobbies: ['collecting stamps' 'sports'],
-    location: { city: 'Miami', state: 'Florida' },
-  };
-
   const response = await fetch(`https://example.com/people`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    data,
+    body: JSON.stringify({
+      name: 'Bobby Big Boy', 
+      hobbies: JSON.stringify(['collecting stamps', 'sports']),
+      location: JSON.stringify({ city: 'Miami', state: 'Florida' }),
+    }),
   });
 
   if(!response.ok) throw new Error('Server error.');
 
   return response.json();
+}
+```
+
+**FarFetch**
+
+```js
+async addPerson() {
+  const { responseJSON } = await ff.post(`https://example.com/people`, {
+    data: {
+      name: 'Bobby Big Boy', 
+      hobbies: ['collecting stamps', 'sports'],
+      location: { city: 'Miami', state: 'Florida' },
+    },
+  });
 }
 ```
 
@@ -230,6 +255,10 @@ horrible anymore in regular Javascript, thanks to features like
 `URLSearchParams`, but it's so much easier to not have to
 think much when you program. `FarFetch`'s consistent API makes it a breeze to
 make any sort of request.
+
+*Note: The content type header for a `POST`, `PUT` and `PATCH` request will
+always be `application/json`, unless `application/x-www-form-urlencoded` is
+specified or if it's a file upload*.
 
 ### Passing in URLParams to Request
 
@@ -439,25 +468,27 @@ const ff = new FarFetch({
 });
 ```
 
+### Set Dynamic Options for Every Request
+
 Sometimes you might not want to set a particular option when FarFetch is
 created. Let's say you're using a login system. You don't want to have the `JWT`
 be evaluated when you instantiate the class, since it won't work properly if a
 user accesses the page logged out. The header would never reevaluate. This is
 why `FarFetch` has allows you to return options you want to use on specific
-conditions on the global `beforeSend()` function. These options will then get
-deep merged, with the `beforeSend()` return taking precedence. Obviously passing
-options into a specific request will take the highest precedence of them all, however.
+conditions on the global `dynamicOptions()` function. These options will then
+get deep merged, with the `dynamicOptions()` return taking precedence.
+Obviously passing options into a specific request will take the highest
+precedence of them all, however.
 
 ```js
 const ff = new FarFetch({
   headers: { 'Content-Type': 'application/json' },
   cache: 'reload',
-  beforeSend() {
+  dynamicOptions() {
     // Use authorization header if token set in localStorage
     if (localStorage.getItem('token')) {
       return {
         headers: {
-          'Content-Type': 'text/plain',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       };
@@ -471,7 +502,7 @@ So if you're logged in, your request would have the following options.
 ```js
 {
   headers: {
-    'Content-Type': 'text/plain',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${localStorage.getItem('token')}`,
   },
   cache: reload,
@@ -570,31 +601,24 @@ request and the `afterSend(response)` one to do something after every request.
 
 ```js
 const ff = new FarFetch({
-  beforeSend() {
+  beforeSend({
+    url,
+    fetchAPIOptions,
+    data,
+    URLParams,
+    files,
+    errorMsg,
+    errorMsgNoun,
+    globalBeforeSend,
+    globalAfterSend,
+    defaultOptionsUsed,
+  }) {
     console.log('do this before every request');
   },
   afterSend(response) {
     console.log('do this after every request');
   },
 });
-```
-
-You can also use any [Init
-options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters)
-from Fetch API as the return to add or override an option.
-
-```js
-beforeSend() {
-  // Use authorization header if token set in localStorage
-  if (localStorage.getItem('token')) {
-    return {
-      headers: {
-        'Content-Type': 'text/plain',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    };
-  }
-}
 ```
 
 ### Turn off Before/After Send Hook on Single Request
@@ -808,17 +832,24 @@ and try to route to the logged in route, even if the request failed.
 ## Typedefs
 
 <dl>
-<dt><a href="#RequestException">RequestException</a> : <code>object</code></dt>
+<dt><a href="#RequestException">RequestException</a> : <code>Object</code></dt>
 <dd><p>The Request exception object.</p>
 </dd>
-<dt><a href="#ResponsePlus">ResponsePlus</a> : <code>object</code></dt>
+<dt><a href="#ResponsePlus">ResponsePlus</a> : <code>Object</code></dt>
 <dd><p>Request object plus responseJSON and responseText properties if correct header type.</p>
 </dd>
-<dt><a href="#RequestOptions">RequestOptions</a> : <code>object</code></dt>
+<dt><a href="#RequestOptionsNoInit">RequestOptionsNoInit</a> : <code>Object</code></dt>
+<dd><p>The request object options without Fetch API options.</p>
+</dd>
+<dt><a href="#RequestOptions">RequestOptions</a> : <code>Object</code></dt>
 <dd><p>The request object options.</p>
 </dd>
-<dt><a href="#beforeSendCallback">beforeSendCallback</a> ⇒ <code>object</code> | <code>undefined</code></dt>
-<dd><p>Callback for global after send hook.</p>
+<dt><a href="#dynamicOptionsCallback">dynamicOptionsCallback</a> ⇒ <code>RequestInit</code></dt>
+<dd><p>Callback for global dynamic options. Allows a dynamic option to be set, like a token stored in
+localStorage.</p>
+</dd>
+<dt><a href="#beforeSendCallback">beforeSendCallback</a> : <code>function</code></dt>
+<dd><p>Callback for global before send hook.</p>
 </dd>
 <dt><a href="#afterSendCallback">afterSendCallback</a> : <code>function</code></dt>
 <dd><p>Callback for global after send hook.</p>
@@ -856,17 +887,30 @@ Create FarFetch object.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [options] | <code>object</code> | <code>{}</code> | Set options. |
+| [options] | <code>Object</code> | <code>{}</code> | Set options. |
 | [options.baseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Base URL for each request. |
+| [options.localBaseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Local base URL for each request. |
+| [options.dynamicOptions] | [<code>dynamicOptionsCallback</code>](#dynamicOptionsCallback) |  | Function that allows a dynamic option to be set, like a token stored in localStorage. |
 | [options.beforeSend] | [<code>beforeSendCallback</code>](#beforeSendCallback) |  | Function to do something before each fetch request. Can return object with RequestOptions to add or override options. |
 | [options.afterSend] | [<code>afterSendCallback</code>](#afterSendCallback) |  | Function to do something after each fetch request. |
 | [options.errorHandler] | [<code>errorHandlerCallback</code>](#errorHandlerCallback) |  | Global error handler. |
 | [options.errorMsgTemplate] | [<code>errorMsgTemplateCallback</code>](#errorMsgTemplateCallback) |  | Function to modify the default error message template for `errorMsgNoun`. |
-| [...options.RequestOptions] | [<code>RequestOptions</code>](#RequestOptions) |  |  |
+| [...options.defaultOptions] | <code>RequestInit</code> | <code>{}</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
 
 **Example**  
 ```js
 const ff = new FarFetch({
+  baseURL: 'https://my-url.com',
+  dynamicOptions() {
+    // Use authorization header if token set in localStorage
+    if (localStorage.getItem('token')) {
+      return {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      }
+    }
+  },
   beforeSend() {
     console.log('Doing something before every request');
   },
@@ -897,7 +941,7 @@ Request function called on every CRUD function.
 | Param | Type | Description |
 | --- | --- | --- |
 | url | <code>string</code> | The URL. |
-| options | <code>object</code> |  |
+| options | <code>Object</code> |  |
 | options.method | <code>&#x27;GET&#x27;</code> \| <code>&#x27;POST&#x27;</code> \| <code>&#x27;PUT&#x27;</code> \| <code>&#x27;PATCH&#x27;</code> \| <code>&#x27;DELETE&#x27;</code> \| <code>&#x27;HEAD&#x27;</code> | The CRUD method. |
 | [...options.RequestOptions] | [<code>RequestOptions</code>](#RequestOptions) |  |
 
@@ -1064,7 +1108,7 @@ FarFetch Error class.
 
 <a name="RequestException"></a>
 
-## RequestException : <code>object</code>
+## RequestException : <code>Object</code>
 The Request exception object.
 
 **Kind**: global typedef  
@@ -1077,7 +1121,7 @@ The Request exception object.
 
 <a name="ResponsePlus"></a>
 
-## ResponsePlus : <code>object</code>
+## ResponsePlus : <code>Object</code>
 Request object plus responseJSON and responseText properties if correct header type.
 
 **Kind**: global typedef  
@@ -1085,37 +1129,65 @@ Request object plus responseJSON and responseText properties if correct header t
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| response | <code>Response</code> |  | Fetch API response [Response object](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
-| [response.responseJSON] | <code>object</code> | <code></code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
+| response | <code>Response</code> |  | Fetch API response. [Response object](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
+| [response.responseJSON] | <code>Object</code> | <code></code> | FarFetch added property that transforms the body to JSON for syntactic sugar if the same response header type. |
 | [response.responseText] | <code>string</code> | <code>null</code> | FarFetch added property that transforms the body to text for syntactic sugar if the same response header type. |
 
-<a name="RequestOptions"></a>
+<a name="RequestOptionsNoInit"></a>
 
-## RequestOptions : <code>object</code>
-The request object options.
+## RequestOptionsNoInit : <code>Object</code>
+The request object options without Fetch API options.
 
 **Kind**: global typedef  
 **Properties**
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| [data] | <code>object.&lt;string, (string\|number\|null\|boolean)&gt;</code> | <code>{}</code> | Data sent to server on request. |
-| [files] | <code>File</code> \| <code>Array.&lt;File&gt;</code> \| <code>object.&lt;string, File&gt;</code> \| <code>object.&lt;string, Array.&lt;File&gt;&gt;</code> |  | Files to upload to server. Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys. |
+| [data] | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code> | <code>{}</code> | Data sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET, HEAD, DELETE. |
+| [URLParams] | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code> | <code>{}</code> | URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the same effect. |
+| [files] | <code>File</code> \| <code>Array.&lt;File&gt;</code> \| <code>Object.&lt;string, File&gt;</code> \| <code>Object.&lt;string, Array.&lt;File&gt;&gt;</code> |  | Files to upload to server. Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys. |
 | [errorMsgNoun] | <code>string</code> | <code>&#x27;&#x27;</code> | Appended error message noun to global error handler. |
-| [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun` |
+| [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun`. |
 | [globalBeforeSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the beforeSend() hook? |
 | [globalAfterSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the afterSend() hook? |
 | [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation or with return value of `beforeSend()`? |
-| [...rest] | <code>object</code> | <code>{}</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
 
-<a name="beforeSendCallback"></a>
+<a name="RequestOptions"></a>
 
-## beforeSendCallback ⇒ <code>object</code> \| <code>undefined</code>
-Callback for global after send hook.
+## RequestOptions : <code>Object</code>
+The request object options.
 
 **Kind**: global typedef  
-**Returns**: <code>object</code> \| <code>undefined</code> - If return value is set, will deep merge it with options set in
-constructor.  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [...requestOptionsNoInit] | [<code>RequestOptionsNoInit</code>](#RequestOptionsNoInit) |  |
+| [...rest] | <code>RequestInit</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
+
+<a name="dynamicOptionsCallback"></a>
+
+## dynamicOptionsCallback ⇒ <code>RequestInit</code>
+Callback for global dynamic options. Allows a dynamic option to be set, like a token stored in
+localStorage.
+
+**Kind**: global typedef  
+**Returns**: <code>RequestInit</code> - [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters)
+from Fetch API.  
+<a name="beforeSendCallback"></a>
+
+## beforeSendCallback : <code>function</code>
+Callback for global before send hook.
+
+**Kind**: global typedef  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [options] | <code>Object</code> |  |
+| [options.url] | <code>string</code> | The URL. |
+| [options.fetchAPIOptions] | <code>RequestInit</code> | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
+| [...options.requestOptions] | [<code>RequestOptionsNoInit</code>](#RequestOptionsNoInit) | The request object options without Fetch API options. |
+
 <a name="afterSendCallback"></a>
 
 ## afterSendCallback : <code>function</code>
@@ -1136,7 +1208,7 @@ Callback for global error handler.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [options] | <code>object</code> |  |
+| [options] | <code>Object</code> |  |
 | [options.error] | <code>FarFetchError</code> \| <code>Error</code> | The FarFetchError option. Will throw regular error if needed. |
 | [options.response] | [<code>ResponsePlus</code>](#ResponsePlus) | Request object plus responseJSON and responseText properties if correct header type. |
 | [options.userMessage] | <code>string</code> | The message given to the user. |
@@ -1151,6 +1223,6 @@ Callback for overriding default error message template.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [options] | <code>object</code> |  |
+| [options] | <code>Object</code> |  |
 | [options.method] | <code>&#x27;GET&#x27;</code> \| <code>&#x27;POST&#x27;</code> \| <code>&#x27;PUT&#x27;</code> \| <code>&#x27;PATCH&#x27;</code> \| <code>&#x27;DELETE&#x27;</code> \| <code>&#x27;HEAD&#x27;</code> | The CRUD method. |
 | [options.errorMsgNoun] | <code>string</code> | The error message noun. |

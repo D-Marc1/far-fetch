@@ -5,7 +5,7 @@ import FarFetchHelper from './far-fetch-helper';
  */
 export default class FarFetchError extends Error {
   /**
-   * @param {string|object.<string, *>} message - Will be in the `message` property if a string
+   * @param {string|Object.<string, *>} message - Will be in the `message` property if a string
    * or its own properties if object.
    */
   constructor(message) {
