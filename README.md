@@ -64,7 +64,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [GET Request](#get-request)
     - [POST Request](#post-request)
     - [application/x-www-form-urlencoded Request](#applicationx-www-form-urlencoded-request)
-    - [Array or Object as Value Request](#array-or-object-as-value-request)
+    - [Array or Object as Value for Key for GET Request](#array-or-object-as-value-for-key-for-get-request)
     - [Passing in URLParams to Request](#passing-in-urlparams-to-request)
   - [Uploading Files](#uploading-files)
     - [Uploading One File](#uploading-one-file)
@@ -212,20 +212,20 @@ async addPerson() {
 }
 ```
 
-### Array or Object as Value Request
+### Array or Object as Value for Key for GET Request
 
 **Fetch API**
 
 ```js
-async addPerson() {
-  const response = await fetch(`https://example.com/people`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: 'Bobby Big Boy', 
-      hobbies: JSON.stringify(['collecting stamps', 'sports']),
-      location: JSON.stringify({ city: 'Miami', state: 'Florida' }),
-    }),
+async getPerson() {
+  const queryString = `?${new URLSearchParams({
+    name: 'Bobby Big Boy', 
+    hobbies: JSON.stringify(['collecting stamps', 'sports']),
+    location: JSON.stringify({ city: 'Miami', state: 'Florida' }),
+  })}`;
+
+  const response = await fetch(`https://example.com/people${queryString}`, {
+    method: 'GET',
   });
 
   if(!response.ok) throw new Error('Server error.');
@@ -234,11 +234,14 @@ async addPerson() {
 }
 ```
 
+This can be a bit cumbersome to have to have to `JSON.stringify()` each value
+that's an array or object. `FarFetch` automatically takes care of this.
+
 **FarFetch**
 
 ```js
-async addPerson() {
-  const { responseJSON } = await ff.post(`https://example.com/people`, {
+async getPerson() {
+  const { responseJSON } = await ff.get(`https://example.com/people`, {
     data: {
       name: 'Bobby Big Boy', 
       hobbies: ['collecting stamps', 'sports'],
@@ -1150,7 +1153,8 @@ The request object options without Fetch API options.
 | [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun`. |
 | [globalBeforeSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the beforeSend() hook? |
 | [globalAfterSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the afterSend() hook? |
-| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation or with return value of `beforeSend()`? |
+| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the
+default options specified on instantiation and the return value of `dynamicOptions()`? |
 
 <a name="RequestOptions"></a>
 

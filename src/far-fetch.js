@@ -45,8 +45,8 @@ export { FarFetchError };
  * hook?
  * @property {boolean} [globalAfterSend = true] - Will this specific request use the afterSend()
  * hook?
- * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the default
- * options specified on instantiation or with return value of `beforeSend()`?
+ * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the
+ * default options specified on instantiation and the return value of `dynamicOptions()`?
  */
 
 /**
@@ -235,7 +235,7 @@ export default class FarFetch {
    * @param {Object} [options.dynamicOptions = {}] - Dynamic options to be set, like a token stored
    * in localStorage.
    * @param {boolean} [options.defaultOptionsUsed = true] - Will this specific request use the
-   * default options specified on instantiation or with return value of `beforeSend()`?
+   * default options specified on instantiation and the return value of `dynamicOptions()`?
    * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} [options.files] - Files to
    * upload to server.
    * @param {...RequestInit} [options.rest = {}] -
