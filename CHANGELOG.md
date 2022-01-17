@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed typo in README on array/object as value for key.
-- Fixed typo in docs where it said to be using `beforeSend()` return instead of
+- Fix typo in README on array/object as value for key.
+- Fix typo in docs where it said to be using `beforeSend()` return instead of
 `dynamicOptions()`.
 
 ## [2.0.0] - 2022-01-16
