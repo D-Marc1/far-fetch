@@ -119,7 +119,6 @@ export default class FarFetch {
    *
    * @param {Object} [options = {}] - Set options.
    * @param {string} [options.baseURL = ''] - Base URL for each request.
-   * @param {string} [options.localBaseURL = ''] - Local base URL for each request.
    * @param {dynamicOptionsCallback} [options.dynamicOptions] - Function that allows a dynamic
    * option to be set, like a token stored in localStorage.
    * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
@@ -164,7 +163,6 @@ export default class FarFetch {
    */
   constructor({
     baseURL = '',
-    localBaseURL = '',
     dynamicOptions,
     beforeSend,
     afterSend,
@@ -173,7 +171,6 @@ export default class FarFetch {
     ...defaultOptions
   } = {}) {
     this.baseURL = baseURL;
-    this.localBaseURL = localBaseURL;
     this.dynamicOptions = dynamicOptions;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
@@ -427,13 +424,8 @@ export default class FarFetch {
       let fullURL = `${url}${queryString}`;
 
       // Base URL is given and URL on request is a relative path
-      if ((this.baseURL || this.localBaseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
-        let prependURL = this.baseURL;
-
-        // Local base URL is given and is the current URL. Working locally.
-        if (this.localBaseURL && window.location.hostname === this.localBaseURL) {
-          prependURL = this.localBaseURL;
-        }
+      if ((this.baseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
+        const prependURL = this.baseURL;
 
         fullURL = `${prependURL}${fullURL}`;
       }

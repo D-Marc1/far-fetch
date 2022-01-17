@@ -77,7 +77,6 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
   - [Getting Response](#getting-response)
     - [Retrieving Response Data](#retrieving-response-data)
   - [Set Base URL](#set-base-url)
-    - [Set Local Base URL](#set-local-base-url)
   - [Before/After Send Hook](#beforeafter-send-hook)
     - [Turn off Before/After Send Hook on Single Request](#turn-off-beforeafter-send-hook-on-single-request)
   - [Error Handling](#error-handling)
@@ -248,6 +247,8 @@ async getPerson() {
       location: { city: 'Miami', state: 'Florida' },
     },
   });
+
+  return responseJSON;
 }
 ```
 
@@ -583,20 +584,6 @@ will override the `baseURL`.
 await ff.get('https://notexample.com/posts');
 ```
 
-### Set Local Base URL
-
-This option allows you set a base URL that is solely used locally. If this
-option is set. `FarFetch` simply checks if the current URL is the local URL.
-This allows you to set both options, and will properly use the correct base URL,
-either locally or in production.
-
-```js
-const ff = new FarFetch({
-  localBaseURL: 'http://localhost:8080',
-  baseURL: 'https://example.com',
-});
-```
-
 ## Before/After Send Hook
 
 You can use the built-in `beforeSend()` hook to do something before every
@@ -892,7 +879,6 @@ Create FarFetch object.
 | --- | --- | --- | --- |
 | [options] | <code>Object</code> | <code>{}</code> | Set options. |
 | [options.baseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Base URL for each request. |
-| [options.localBaseURL] | <code>string</code> | <code>&#x27;&#x27;</code> | Local base URL for each request. |
 | [options.dynamicOptions] | [<code>dynamicOptionsCallback</code>](#dynamicOptionsCallback) |  | Function that allows a dynamic option to be set, like a token stored in localStorage. |
 | [options.beforeSend] | [<code>beforeSendCallback</code>](#beforeSendCallback) |  | Function to do something before each fetch request. Can return object with RequestOptions to add or override options. |
 | [options.afterSend] | [<code>afterSendCallback</code>](#afterSendCallback) |  | Function to do something after each fetch request. |
@@ -1153,8 +1139,7 @@ The request object options without Fetch API options.
 | [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun`. |
 | [globalBeforeSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the beforeSend() hook? |
 | [globalAfterSend] | <code>boolean</code> | <code>true</code> | Will this specific request use the afterSend() hook? |
-| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the
-default options specified on instantiation and the return value of `dynamicOptions()`? |
+| [defaultOptionsUsed] | <code>boolean</code> | <code>true</code> | Will this specific request use the default options specified on instantiation and the return value of `dynamicOptions()`? |
 
 <a name="RequestOptions"></a>
 

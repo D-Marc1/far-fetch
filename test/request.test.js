@@ -235,27 +235,6 @@ describe('testing options on instantiation', () => {
     expect(response.url).toEqual('https://notexample.com/users4');
   });
 
-  it('should set localBaseURL when specified', async () => {
-    const baseURL = 'http://example.com';
-    const localBaseURL = 'http://localhost';
-    const path = '/usersdjfnvf';
-
-    delete global.window.location;
-    global.window = Object.create(window);
-    global.window.location = {
-      protocol: 'http:',
-      hostname: localBaseURL,
-    };
-
-    const ff = new FarFetch({ baseURL, localBaseURL });
-
-    fetchMock.get(`${localBaseURL}${path}`, 200);
-
-    const response = await ff.get(path);
-
-    expect(response.url).toEqual(`${localBaseURL}${path}`);
-  });
-
   it('should accept Fetch API init options on the constructor', async () => {
     const initOptions = {
       headers: {
