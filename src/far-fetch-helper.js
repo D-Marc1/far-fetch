@@ -10,6 +10,10 @@ export default class FarFetchHelper {
     return Object.prototype.toString.call(value) === '[object Object]';
   }
 
+  static isEmptyObject(value) {
+    return this.isPlainObject(value) && Object.keys(value).length === 0;
+  }
+
   /**
    * Checks if string is an absolute URL.
    * Credit: https://github.com/sindresorhus/is-absolute-url

@@ -3,5 +3,8 @@ module.exports = {
     '@release-it/keep-a-changelog': {
       addVersionUrl: true,
     },
+    github: {
+      release: true,
+    },
   },
 };
