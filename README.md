@@ -138,11 +138,11 @@ async getPerson() {
 
 ```js
 async getPerson() {
-  const { responseJSON } = await ff.get('https://example.com/people', {
+  const { responseData } = await ff.get('https://example.com/people', {
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseJSON;
+  return responseData;
 }
 ```
 
@@ -170,11 +170,11 @@ async addPerson() {
 
 ```js
 async addPerson() {
-  const { responseJSON } = await ff.post('https://example.com/people', {
+  const { responseData } = await ff.post('https://example.com/people', {
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseJSON;
+  return responseData;
 }
 ```
 
@@ -202,12 +202,12 @@ async addPerson() {
 
 ```js
 async addPerson() {
-  const { responseJSON } = await ff.post('https://example.com/people', {
+  const { responseData } = await ff.post('https://example.com/people', {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseJSON;
+  return responseData;
 }
 ```
 
@@ -240,7 +240,7 @@ that's an array or object. `FarFetch` automatically takes care of this.
 
 ```js
 async getPerson() {
-  const { responseJSON } = await ff.get(`https://example.com/people`, {
+  const { responseData } = await ff.get(`https://example.com/people`, {
     data: {
       name: 'Bobby Big Boy', 
       hobbies: ['collecting stamps', 'sports'],
@@ -248,7 +248,7 @@ async getPerson() {
     },
   });
 
-  return responseJSON;
+  return responseData;
 }
 ```
 
@@ -280,12 +280,12 @@ senario.
 
 ```js
 async addPerson() {
-  const { responseJSON } = await ff.post('https://example.com/people', {
+  const { responseData } = await ff.post('https://example.com/people', {
     URLParams: { weight: 75 },
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseJSON;
+  return responseData;
 }
 ```
 
@@ -532,31 +532,45 @@ how you'd be doing it in native `Fetch` as well.
 the the `Response` `Body` and transforming it to your type.
 
 ```js
-const response = await ff.get('https://example.com/people');
+const response = await ff.get('https://example.com/people', {
+  responseType: null,
+});
 
-const responseJSON = await response.json();
+const responseData = await response.json();
 
-return responseJSON;
+return responseData;
 ```
 
-You can also use `FarFetch`'s handy `responseJSON` and `responseText`
-properties for your convenience, instead of having to await for either `response.json()` or
-`response.text()`, if the response header type is either `application/json` or
-`text/plain`, respectively. These are properties that were simply added to the
-`Response` object. What's also nice about this is that it ensures that getting
-the JSON won't result in an error, due to a mismatch in header, as `FarFetch`
-checks for this already, internally.
+You can also use `FarFetch`'s handy `responseData` property, for your
+convenience, instead of having to await for either `response.json()` or
+`response.text()`. These are properties that were simply added to the
+`Response` object, which is set both globally, via the `defaultResponseType`
+property, and locally for each request call, via the `responseType` property.
+The default value for `defaultResponseType` is **json**.
 
 ```js
-const { responseJSON } = await ff.get('https://example.com/people');
+const { responseData } = await ff.get('https://example.com/people');
 
-return responseJSON;
+return responseData;
 ```
 
 ```js
-const { responseText } = await ff.get('https://example.com/people');
+const { responseData } = await ff.get('https://example.com/people', {
+  responseType: 'text',
+});
 
-return responseText;
+return responseData;
+```
+
+The previous example showed how change the `responseType` to **text** for an
+individual request. The following example will show how this done globally.
+
+```js
+const ff = new FarFetch({ defaultResponseType: 'text' })
+
+const { responseData } = await ff.get('https://example.com/people');
+
+return responseData;
 ```
 
 ## Set Base URL
@@ -593,15 +607,17 @@ request and the `afterSend(response)` one to do something after every request.
 const ff = new FarFetch({
   beforeSend({
     url,
+    errorMsg,
+    errorMsgNoun,
     fetchAPIOptions,
     data,
     URLParams,
+    queryString,
     files,
-    errorMsg,
-    errorMsgNoun,
     globalBeforeSend,
     globalAfterSend,
     defaultOptionsUsed,
+    responseType,
   }) {
     console.log('do this before every request');
   },
@@ -773,7 +789,7 @@ async register(type) {
       if (response.status === 409) { // Conflict
         userMessage = 'Email is already in system';
       } else if (response.status === 400) { // Validation failed
-        const { field, validationMsg } = response.responseJSON;
+        const { field, validationMsg } = response.responseData;
 
         userMessage = `${field} is ${validationMsg}`;
       }

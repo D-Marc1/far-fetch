@@ -14,6 +14,10 @@ export default class FarFetchHelper {
     return this.isPlainObject(value) && Object.keys(value).length === 0;
   }
 
+  static isValidReturnType(type) {
+    return type === 'arrayBuffer' || 'blob' || 'formData' || 'json' || 'text' || 'none';
+  }
+
   /**
    * Checks if string is an absolute URL.
    * Credit: https://github.com/sindresorhus/is-absolute-url

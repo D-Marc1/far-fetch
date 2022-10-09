@@ -4,6 +4,8 @@ import fetchMock from 'fetch-mock-jest';
 
 import FarFetch, { FarFetchError } from '../src/far-fetch';
 
+import FarFetchHelper from '../src/far-fetch-helper';
+
 beforeEach(() => {
   fetchMock.mockClear();
 });
@@ -79,7 +81,7 @@ describe('testing data parameters', () => {
     fetchMock[type]('http://example.com/usersBody', 200);
 
     await ff[type]('http://example.com/usersBody', {
-      'Content-Type': 'application/json',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
@@ -340,7 +342,7 @@ describe('testing options on instantiation', () => {
     });
 
     await expect(
-      ff.post('http://example.com/usersddz', { errorMsgNoun: 'user' }),
+      ff.post('http://example.com/usersddz', { errorMsgNoun, data }),
     ).rejects.toThrow(FarFetchError);
 
     const { userMessage, error, response } = errorHandlerMock.mock.calls[0][0];
@@ -351,7 +353,7 @@ describe('testing options on instantiation', () => {
 
     expect(response.status).toEqual(400);
 
-    expect(response.responseJSON).toEqual(data);
+    expect(response.responseData).toEqual(data);
   });
 
   it(`should run errorHandler() hook function with errorMsg
@@ -483,6 +485,7 @@ describe('testing options on instantiation', () => {
       URLParams: requestParamsData,
       cache: 'force-cache',
       files: file,
+      responseType: 'arrayBuffer',
     });
 
     expect(beforeSendMock).toHaveBeenCalled();
@@ -494,11 +497,15 @@ describe('testing options on instantiation', () => {
       fetchAPIOptions: { cache, mode, keepalive },
       data,
       URLParams,
+      queryString,
       files,
       globalBeforeSend,
       globalAfterSend,
       defaultOptionsUsed,
+      responseType,
     } = beforeSendMock.mock.calls[0][0];
+
+    const queryStringGenerated = FarFetchHelper.objectToQueryString(URLParams);
 
     expect(url).toBe('http://example.com/usersddzz');
     expect(errorMsg).toBe(requestErrorMsg);
@@ -508,10 +515,12 @@ describe('testing options on instantiation', () => {
     expect(keepalive).toBe(true);
     expect(data).toBe(requestData);
     expect(URLParams).toBe(requestParamsData);
+    expect(queryString).toBe(queryStringGenerated);
     expect(files).toEqual(file);
     expect(globalBeforeSend).toBe(true);
     expect(globalAfterSend).toBe(true);
     expect(defaultOptionsUsed).toBe(true);
+    expect(responseType).toBe('arrayBuffer');
   });
 
   it('should NOT run beforeSend() hook function', async () => {
@@ -609,10 +618,10 @@ describe('testing options on instantiation', () => {
 });
 
 describe('testing automatically transforming response body, but allowing manual as well', () => {
-  it('should transform the response body to JSON if response header is JSON content-type, but still be able do it manually as well', async () => {
+  it('should all to transform the body manually with vanilla Fetch API with JSON', async () => {
     const afterSendMock = jest.fn((response) => response);
 
-    const ff = new FarFetch({ afterSend: afterSendMock });
+    const ff = new FarFetch({ afterSend: afterSendMock, defaultResponseType: null });
 
     const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
@@ -628,21 +637,19 @@ describe('testing automatically transforming response body, but allowing manual 
 
     const responseParam = afterSendMock.mock.calls[0][0];
 
-    const responseJSONManualTransform = await response.json();
+    const responseDataManualTransform = await response.json();
 
     expect(response.status).toEqual(200);
 
-    expect(response.responseJSON).toEqual(data);
-
-    expect(response.responseJSON).toEqual(responseJSONManualTransform);
+    expect(responseDataManualTransform).toEqual(data);
 
     expect(response).toEqual(responseParam);
   });
 
-  it('should transform the response body to text if response header is text content-type, but still be able do it manually as well', async () => {
+  it('should all to transform the body manually with vanilla Fetch API with text', async () => {
     const afterSendMock = jest.fn((response) => response);
 
-    const ff = new FarFetch({ afterSend: afterSendMock });
+    const ff = new FarFetch({ afterSend: afterSendMock, defaultResponseType: null });
 
     const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
@@ -657,13 +664,11 @@ describe('testing automatically transforming response body, but allowing manual 
 
     const responseParam = afterSendMock.mock.calls[0][0];
 
-    const responseTextManualTransform = await response.text();
+    const responseDataManualTransform = await response.text();
 
     expect(response.status).toEqual(200);
 
-    expect(response.responseText).toEqual(JSON.stringify(data));
-
-    expect(response.responseText).toEqual(responseTextManualTransform);
+    expect(responseDataManualTransform).toEqual(JSON.stringify(data));
 
     expect(response).toEqual(responseParam);
   });

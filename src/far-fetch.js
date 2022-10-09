@@ -14,15 +14,19 @@ export { FarFetchError };
  */
 
 /**
- * Request object plus responseJSON and responseText properties if correct header type.
+ * Request object plus responseData, which is the transformed body, according to the specified type.
  *
  * @typedef {Object} ResponsePlus
  * @property {Response} response - Fetch API response.
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Response|Response object}.
- * @property {Object} [response.responseJSON = null] - FarFetch added property that transforms the
- * body to JSON for syntactic sugar if the same response header type.
- * @property {string} [response.responseText = null] - FarFetch added property that transforms the
- * body to text for syntactic sugar if the same response header type.
+ * @property {ArrayBuffer|Blob|FormData|JSON|string|null} [response.responseData = null] - FarFetch
+ * added property that transforms the body to the specified response type for syntactic sugar.
+ */
+
+/**
+ * Response types available.
+ *
+ * @typedef {('arrayBuffer'|'blob'|'formData'|'json'|'text'|null)} ResponseType
  */
 
 /**
@@ -47,6 +51,7 @@ export { FarFetchError };
  * hook?
  * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the
  * default options specified on instantiation and the return value of `dynamicOptions()`?
+ * @property {ResponseType} [responseType = this.defaultResponseType] - The response type.
  */
 
 /**
@@ -86,8 +91,7 @@ export { FarFetchError };
  * Callback for global after send hook.
  *
  * @callback afterSendCallback
- * @param {ResponsePlus} response - Request object plus responseJSON and responseText properties if
- * correct header type.
+ * @param {ResponsePlus} response
  */
 
 /**
@@ -97,8 +101,7 @@ export { FarFetchError };
  * @param {Object} [options]
  * @param {FarFetchError|Error} [options.error] - The FarFetchError option. Will throw regular error
  * if needed.
- * @param {ResponsePlus} [options.response] - Request object plus responseJSON and responseText
- * properties if correct header type.
+ * @param {ResponsePlus} [options.response]
  * @param {string} [options.userMessage] - The message given to the user.
  */
 
@@ -125,6 +128,8 @@ export default class FarFetch {
    * each fetch request. Can return object with RequestOptions to add or override options.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
    * request.
+   * @param {ResponseType} [options.defaultResponseType = 'json'] - The default response type.
+   * The default value is 'json'.
    * @param {errorHandlerCallback} [options.errorHandler] - Global error handler.
    * @param {errorMsgTemplateCallback} [options.errorMsgTemplate] - Function to modify the default
    * error message template for `errorMsgNoun`.
@@ -151,6 +156,7 @@ export default class FarFetch {
    *   afterSend(response) {
    *     console.log('Doing after before every request');
    *   },
+   *   defaultResponseType: 'text',
    *   errorHandler({ error, userMessage, response }) {
    *     if(response.status === 401) { // Unauthorized
    *       router.push('/login');
@@ -166,6 +172,7 @@ export default class FarFetch {
     dynamicOptions,
     beforeSend,
     afterSend,
+    defaultResponseType = 'json',
     errorHandler,
     errorMsgTemplate,
     ...defaultOptions
@@ -174,6 +181,7 @@ export default class FarFetch {
     this.dynamicOptions = dynamicOptions;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
+    this.defaultResponseType = defaultResponseType;
     this.errorHandler = errorHandler;
     this.errorMsgTemplate = errorMsgTemplate;
     this.defaultOptions = defaultOptions;
@@ -309,30 +317,28 @@ export default class FarFetch {
 
   /**
    * @private
-   * @param {Response} response - Fetch API response object.
-   * @returns {Promise<ResponsePlus>} - Modified response object with responseJSON and responseText
+   * @param {Object} options
+   * @param {Response} option.response - Fetch API response object.
+   * @param {ResponseType} [options.responseType = this.defaultResponseType] - The response type.
+   * @returns {Promise<ResponsePlus>} - Modified response object with the sepcified response type
    * properties as transformed body for syntactic sugar.
    */
-  static async modifiedResponse(response) {
-    const responseContentType = response.headers?.get('Content-Type');
+  static async modifiedResponse({ response, responseType }) {
+    const responseContentType = response.headers.get('Content-Type');
 
-    const responseContentTypeJson = responseContentType?.includes('application/json');
-    const responseContentTypeText = responseContentType?.includes('text/plain');
+    let responseData = null;
 
-    // Transforming body, like calling json(), can only be used once, so clone is needed to keep
-    // original. Also needed to clone parameter to prevent mutating it.
-    const modifiedResponse = response.clone();
-
-    modifiedResponse.responseJSON = null;
-    modifiedResponse.responseText = null;
-
-    if (responseContentTypeJson) {
-      modifiedResponse.responseJSON = await response.json();
-    } else if (responseContentTypeText) {
-      modifiedResponse.responseText = await response.text();
+    // Valid response and has a content type.
+    if (
+      FarFetchHelper.isValidReturnType(responseType) && responseType !== null
+      && responseContentType
+    ) {
+      responseData = await response[responseType]();
     }
 
-    return modifiedResponse;
+    response.responseData = responseData;
+
+    return response;
   }
 
   /**
@@ -361,6 +367,7 @@ export default class FarFetch {
     globalBeforeSend = true,
     globalAfterSend = true,
     defaultOptionsUsed = true,
+    responseType = this.defaultResponseType,
     ...rest
   }) {
     let dynamicOptions;
@@ -391,21 +398,19 @@ export default class FarFetch {
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
       const isBeforeSendAsync = this.beforeSend.constructor.name === 'AsyncFunction';
 
-      // // Merges default request options set in instantiation with ones set in specific request.
-      // // Will obviously not have access to beforeSend() options returned.
-      // const fetchAPIOptions = deepMerge(this.defaultOptions, rest);
-
       const beforeSendObjectParameters = {
         url,
         fetchAPIOptions: options,
         data,
         URLParams,
+        queryString,
         files,
         errorMsg,
         errorMsgNoun,
         globalBeforeSend,
         globalAfterSend,
         defaultOptionsUsed,
+        responseType,
       };
 
       // Await function if is async
@@ -434,7 +439,7 @@ export default class FarFetch {
 
       if (!response.ok) throw new FarFetchError('Server error.');
 
-      response = await FarFetch.modifiedResponse(response);
+      response = await FarFetch.modifiedResponse({ response, responseType });
 
       // If globalAfterSend option is set to true and afterSend() declared on instantiation
       if (globalAfterSend && typeof this.afterSend === 'function') {
@@ -452,8 +457,9 @@ export default class FarFetch {
       // Global error handler needs to be declared and either
       // an entire errorMsg or just the appended errorMsgNoun need to be declared
       if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
-        if (response) {
-          response = await FarFetch.modifiedResponse(response);
+        // Has a response, but hasn't been mofified yet
+        if (response && !Object.hasOwn(response, 'responseData')) {
+          response = await FarFetch.modifiedResponse({ response, responseType });
         }
 
         const userMessage = this.userMessage({
