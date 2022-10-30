@@ -2,9 +2,13 @@ import deepMerge from 'deepmerge';
 
 import fetchMock from 'fetch-mock-jest';
 
+import { TextDecoder } from 'util';
+
 import FarFetch, { FarFetchError } from '../src/far-fetch';
 
 import FarFetchHelper from '../src/far-fetch-helper';
+
+global.TextDecoder = TextDecoder;
 
 beforeEach(() => {
   fetchMock.mockClear();
@@ -618,58 +622,44 @@ describe('testing options on instantiation', () => {
 });
 
 describe('testing automatically transforming response body, but allowing manual as well', () => {
-  it('should all to transform the body manually with vanilla Fetch API with JSON', async () => {
-    const afterSendMock = jest.fn((response) => response);
-
-    const ff = new FarFetch({ afterSend: afterSendMock, defaultResponseType: null });
+  const transformResponse = async ({ type, isManual = false }) => {
+    const ff = new FarFetch({
+      defaultResponseType: isManual ? null : type,
+    });
 
     const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
-    fetchMock.post('http://example.com/usersei', {
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    const url = `http://example.com/usersei${type}${isManual ? 'yes' : 'no'}`;
 
-    const response = await ff.post('http://example.com/usersei', {
-      headers: { 'Content-Type': 'application/json' },
-      data,
-    });
+    fetchMock.post(url, { body: JSON.stringify(data) });
 
-    const responseParam = afterSendMock.mock.calls[0][0];
+    const response = await ff.post(url, { data });
 
-    const responseDataManualTransform = await response.json();
+    let responseData = isManual ? await response[type]() : response.responseData;
 
-    expect(response.status).toEqual(200);
+    if (type === 'arrayBuffer') {
+      responseData = JSON.parse(new TextDecoder().decode(responseData));
+    } else if (type === 'blob') {
+      responseData = JSON.parse(await responseData.text());
+    }
 
-    expect(responseDataManualTransform).toEqual(data);
-
-    expect(response).toEqual(responseParam);
-  });
-
-  it('should all to transform the body manually with vanilla Fetch API with text', async () => {
-    const afterSendMock = jest.fn((response) => response);
-
-    const ff = new FarFetch({ afterSend: afterSendMock, defaultResponseType: null });
-
-    const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
-
-    fetchMock.post('http://example.com/userseir', {
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(data),
-    });
-
-    const response = await ff.post('http://example.com/userseir', {
-      headers: { 'Content-Type': 'text/plain' },
-    });
-
-    const responseParam = afterSendMock.mock.calls[0][0];
-
-    const responseDataManualTransform = await response.text();
+    const dataFormatted = type === 'text' ? JSON.stringify(data) : data;
 
     expect(response.status).toEqual(200);
 
-    expect(responseDataManualTransform).toEqual(JSON.stringify(data));
+    expect(responseData).toEqual(dataFormatted);
+  };
 
-    expect(response).toEqual(responseParam);
+  const responseTypes = ['json', 'text', 'blob', 'arrayBuffer'];
+
+  const texts = ['manually with vanilla Fetch API', 'automatically with FarFetch'];
+  const isManuals = [true, false];
+
+  isManuals.forEach((isManual, index) => {
+    responseTypes.forEach((responseType) => {
+      it(`should all to transform the body ${texts[index]} with ${responseType}`, async () => {
+        await transformResponse({ type: responseType, isManual });
+      });
+    });
   });
 });

@@ -15,7 +15,7 @@ export default class FarFetchHelper {
   }
 
   static isValidReturnType(type) {
-    return type === 'arrayBuffer' || 'blob' || 'formData' || 'json' || 'text' || 'none';
+    return type === 'arrayBuffer' || 'blob' || 'formData' || 'json' || 'text' || null;
   }
 
   /**
