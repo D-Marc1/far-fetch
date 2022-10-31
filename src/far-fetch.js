@@ -326,6 +326,11 @@ export default class FarFetch {
   static async modifiedResponse({ response, responseType }) {
     const responseContentType = response.headers.get('Content-Type');
 
+    // Deep cloning response object to prevent mutation. Cloning response before body transformation
+    // allows body to be re-transformed.
+    const responseCloned = response.clone();
+
+    // responseData will always be added, even if the response body isn't transformed
     let responseData = null;
 
     // Valid response and has a content type.
@@ -336,9 +341,9 @@ export default class FarFetch {
       responseData = await response[responseType]();
     }
 
-    response.responseData = responseData;
+    Object.assign(responseCloned, { responseData });
 
-    return response;
+    return responseCloned;
   }
 
   /**
