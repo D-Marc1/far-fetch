@@ -225,6 +225,51 @@ export default class FarFetch {
     return `Error ${action} ${errorMsgNoun}`;
   }
 
+  async getDynamicOptions() {
+    let dynamicOptions;
+
+    if (typeof this.dynamicOptions === 'function') {
+      const isDynamicOptionsAsync = this.dynamicOptions.constructor.name === 'AsyncFunction';
+
+      // Await function if is async
+      if (isDynamicOptionsAsync) {
+        // Await and do something before every request
+        dynamicOptions = await this.dynamicOptions();
+      } else {
+        // Do something before every request
+        dynamicOptions = this.dynamicOptions();
+      }
+    }
+
+    return dynamicOptions;
+  }
+
+  async mergeOptions({ rest, defaultOptionsUsed }) {
+    let options;
+
+    const dynamicOptions = await this.getDynamicOptions();
+
+    if (defaultOptionsUsed) {
+      let defaultOptions = deepMerge({}, this.defaultOptions);
+
+      if (dynamicOptions !== undefined) { // If dynamicOptions() has return value
+        if (!FarFetchHelper.isPlainObject(dynamicOptions)) {
+          throw new TypeError('Return value of beforeSend() must be plain object');
+        }
+
+        // Deep merge default options and beforeSend() options; beforeSendOptions takes precedence
+        defaultOptions = deepMerge(defaultOptions, dynamicOptions);
+      }
+
+      // Deep merge with single request; single request takes precedence
+      options = deepMerge(defaultOptions, rest);
+    } else {
+      options = rest;
+    }
+
+    return options;
+  }
+
   /**
    * Set options to conform to FarFetch
    *
@@ -247,35 +292,16 @@ export default class FarFetch {
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
    * from Fetch API.
    */
-  setFetchOptions({
+  async setFetchOptions({
     data = {},
     URLParams = {},
-    dynamicOptions,
     defaultOptionsUsed,
     files,
     ...rest
   }) {
-    let options = {};
+    let options = await this.mergeOptions({ rest, defaultOptionsUsed });
 
     let queryString = '';
-
-    if (defaultOptionsUsed) {
-      let defaultOptions = deepMerge({}, this.defaultOptions);
-
-      if (dynamicOptions !== undefined) { // If dynamicOptions() has return value
-        if (!FarFetchHelper.isPlainObject(dynamicOptions)) {
-          throw new TypeError('Return value of beforeSend() must be plain object');
-        }
-
-        // Deep merge default options and beforeSend() options; beforeSendOptions takes precedence
-        defaultOptions = deepMerge(defaultOptions, dynamicOptions);
-      }
-
-      // Deep merge with single request; single request takes precedence
-      options = deepMerge(defaultOptions, rest);
-    } else {
-      options = rest;
-    }
 
     const contentTypeHeader = options.headers?.['Content-Type'];
 
@@ -346,6 +372,76 @@ export default class FarFetch {
     return responseCloned;
   }
 
+  getFullURL({ url, queryString }) {
+    let fullURL = `${url}${queryString}`;
+
+    // Base URL is given and URL on request is a relative path
+    if ((this.baseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
+      const prependURL = this.baseURL;
+
+      fullURL = `${prependURL}${fullURL}`;
+    }
+
+    return fullURL;
+  }
+
+  async runBeforeSend({ beforeSendObjectParameters }) {
+    const { globalBeforeSend } = beforeSendObjectParameters;
+
+    // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
+    if (globalBeforeSend && typeof this.beforeSend === 'function') {
+      const isBeforeSendAsync = this.beforeSend.constructor.name === 'AsyncFunction';
+
+      // Await function if is async
+      if (isBeforeSendAsync) {
+        // Await and do something before every request
+        await this.beforeSend(beforeSendObjectParameters);
+      } else {
+        // Do something before every request
+        this.beforeSend(beforeSendObjectParameters);
+      }
+    }
+  }
+
+  async runAfterSend({ globalAfterSend, response }) {
+    // If globalAfterSend option is set to true and afterSend() declared on instantiation
+    if (globalAfterSend && typeof this.afterSend === 'function') {
+      const isAfterSendAsync = this.afterSend.constructor.name === 'AsyncFunction';
+
+      if (isAfterSendAsync) {
+        // Await and do something after every request
+        await this.afterSend(response);
+      } else {
+        // Do something after every request
+        this.afterSend(response);
+      }
+    }
+  }
+
+  async runErrorHandler({
+    response, error, errorMsg, errorMsgNoun, options,
+  }) {
+    // Global error handler needs to be declared and either
+    // an entire errorMsg or just the appended errorMsgNoun need to be declared
+    if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
+      const userMessage = this.userMessage({
+        errorMsg,
+        errorMsgNoun,
+        method: options.method,
+      });
+
+      const isErrorHandlerAsync = this.errorHandler.constructor.name === 'AsyncFunction';
+
+      if (isErrorHandlerAsync) {
+        // Await error handler
+        await this.errorHandler({ error, response, userMessage });
+      } else {
+        // Non-await error handler
+        this.errorHandler({ error, response, userMessage });
+      }
+    }
+  }
+
   /**
    * Request function called on every CRUD function.
    *
@@ -375,70 +471,35 @@ export default class FarFetch {
     responseType = this.defaultResponseType,
     ...rest
   }) {
-    let dynamicOptions;
-
-    if (typeof this.dynamicOptions === 'function') {
-      const isDynamicOptionsAsync = this.dynamicOptions.constructor.name === 'AsyncFunction';
-
-      // Await function if is async
-      if (isDynamicOptionsAsync) {
-        // Await and do something before every request
-        dynamicOptions = await this.dynamicOptions();
-      } else {
-        // Do something before every request
-        dynamicOptions = this.dynamicOptions();
-      }
-    }
-
-    const { queryString, options } = this.setFetchOptions({
+    const { queryString, options } = await this.setFetchOptions({
       data,
       URLParams,
-      dynamicOptions,
       defaultOptionsUsed,
       files,
       ...rest,
     });
 
-    // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
-    if (globalBeforeSend && typeof this.beforeSend === 'function') {
-      const isBeforeSendAsync = this.beforeSend.constructor.name === 'AsyncFunction';
+    const beforeSendObjectParameters = {
+      url,
+      fetchAPIOptions: options,
+      data,
+      URLParams,
+      queryString,
+      files,
+      errorMsg,
+      errorMsgNoun,
+      globalBeforeSend,
+      globalAfterSend,
+      defaultOptionsUsed,
+      responseType,
+    };
 
-      const beforeSendObjectParameters = {
-        url,
-        fetchAPIOptions: options,
-        data,
-        URLParams,
-        queryString,
-        files,
-        errorMsg,
-        errorMsgNoun,
-        globalBeforeSend,
-        globalAfterSend,
-        defaultOptionsUsed,
-        responseType,
-      };
-
-      // Await function if is async
-      if (isBeforeSendAsync) {
-        // Await and do something before every request
-        await this.beforeSend(beforeSendObjectParameters);
-      } else {
-        // Do something before every request
-        this.beforeSend(beforeSendObjectParameters);
-      }
-    }
+    await this.runBeforeSend({ beforeSendObjectParameters });
 
     let response = '';
 
     try {
-      let fullURL = `${url}${queryString}`;
-
-      // Base URL is given and URL on request is a relative path
-      if ((this.baseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
-        const prependURL = this.baseURL;
-
-        fullURL = `${prependURL}${fullURL}`;
-      }
+      const fullURL = this.getFullURL({ url, queryString });
 
       response = await fetch(fullURL, options);
 
@@ -446,43 +507,19 @@ export default class FarFetch {
 
       response = await FarFetch.modifiedResponse({ response, responseType });
 
-      // If globalAfterSend option is set to true and afterSend() declared on instantiation
-      if (globalAfterSend && typeof this.afterSend === 'function') {
-        const isAfterSendAsync = this.afterSend.constructor.name === 'AsyncFunction';
-
-        if (isAfterSendAsync) {
-          // Await and do something after every request
-          await this.afterSend(response);
-        } else {
-          // Do something after every request
-          this.afterSend(response);
-        }
-      }
+      await this.runAfterSend({ globalAfterSend, response });
     } catch (error) {
-      // Global error handler needs to be declared and either
-      // an entire errorMsg or just the appended errorMsgNoun need to be declared
-      if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
+      if (
+        typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)
+        && response && !Object.hasOwn(response, 'responseData')
+      ) {
         // Has a response, but hasn't been mofified yet
-        if (response && !Object.hasOwn(response, 'responseData')) {
-          response = await FarFetch.modifiedResponse({ response, responseType });
-        }
-
-        const userMessage = this.userMessage({
-          errorMsg,
-          errorMsgNoun,
-          method: options.method,
-        });
-
-        const isErrorHandlerAsync = this.errorHandler.constructor.name === 'AsyncFunction';
-
-        if (isErrorHandlerAsync) {
-          // Await error handler
-          await this.errorHandler({ error, response, userMessage });
-        } else {
-          // Non-await error handler
-          this.errorHandler({ error, response, userMessage });
-        }
+        response = await FarFetch.modifiedResponse({ response, responseType });
       }
+
+      await this.runErrorHandler({
+        response, error, errorMsg, errorMsgNoun, options,
+      });
 
       // Throw request object to all manually handling exception and stop execution for sequential
       // tasks
