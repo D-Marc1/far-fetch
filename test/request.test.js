@@ -2,7 +2,13 @@ import deepMerge from 'deepmerge';
 
 import fetchMock from 'fetch-mock-jest';
 
+import { TextDecoder } from 'util';
+
 import FarFetch, { FarFetchError } from '../src/far-fetch';
+
+import FarFetchHelper from '../src/far-fetch-helper';
+
+global.TextDecoder = TextDecoder;
 
 beforeEach(() => {
   fetchMock.mockClear();
@@ -31,7 +37,7 @@ describe('testing api calls', () => {
 describe('testing data parameters', () => {
   const ff = new FarFetch();
 
-  const queryStringTest = async ({ type, URLParams = false }) => {
+  const queryStringTest = async ({ type, queryParams = false }) => {
     const data = {
       name: 'Bobby Big Boy',
       gender: 'Male',
@@ -48,13 +54,13 @@ describe('testing data parameters', () => {
 
     const params = `${new URLSearchParams(dataStringified)}`;
 
-    const url = `http://example.com/users${URLParams ? 'UP' : 'NoUP'}`;
+    const url = `http://example.com/users${queryParams ? 'UP' : 'NoUP'}`;
 
     const URLWithParams = `${url}?${params}`;
 
     fetchMock[type](URLWithParams, 200);
 
-    const options = URLParams ? { URLParams: data } : { data };
+    const options = queryParams ? { queryParams: data } : { data };
 
     const response = await ff[type](url, options);
 
@@ -79,7 +85,7 @@ describe('testing data parameters', () => {
     fetchMock[type]('http://example.com/usersBody', 200);
 
     await ff[type]('http://example.com/usersBody', {
-      'Content-Type': 'application/json',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
@@ -95,8 +101,8 @@ describe('testing data parameters', () => {
   });
 
   ['GET', 'HEAD', 'DELETE'].forEach((requestHeaderType) => {
-    it(`should successfully do a ${requestHeaderType} request with URLParams parameters and automatically convert object and array types`, () => {
-      queryStringTest({ type: requestHeaderType.toLowerCase(), URLParams: true });
+    it(`should successfully do a ${requestHeaderType} request with queryParams parameters and automatically convert object and array types`, () => {
+      queryStringTest({ type: requestHeaderType.toLowerCase(), queryParams: true });
     });
   });
 
@@ -340,7 +346,7 @@ describe('testing options on instantiation', () => {
     });
 
     await expect(
-      ff.post('http://example.com/usersddz', { errorMsgNoun: 'user' }),
+      ff.post('http://example.com/usersddz', { errorMsgNoun, data }),
     ).rejects.toThrow(FarFetchError);
 
     const { userMessage, error, response } = errorHandlerMock.mock.calls[0][0];
@@ -351,7 +357,7 @@ describe('testing options on instantiation', () => {
 
     expect(response.status).toEqual(400);
 
-    expect(response.responseJSON).toEqual(data);
+    expect(response.responseData).toEqual(data);
   });
 
   it(`should run errorHandler() hook function with errorMsg
@@ -480,9 +486,10 @@ describe('testing options on instantiation', () => {
       errorMsg: requestErrorMsg,
       errorMsgNoun: 'user',
       data: requestData,
-      URLParams: requestParamsData,
+      queryParams: requestParamsData,
       cache: 'force-cache',
       files: file,
+      responseType: 'arrayBuffer',
     });
 
     expect(beforeSendMock).toHaveBeenCalled();
@@ -493,12 +500,16 @@ describe('testing options on instantiation', () => {
       errorMsgNoun,
       fetchAPIOptions: { cache, mode, keepalive },
       data,
-      URLParams,
+      queryParams,
+      queryString,
       files,
       globalBeforeSend,
       globalAfterSend,
       defaultOptionsUsed,
+      responseType,
     } = beforeSendMock.mock.calls[0][0];
+
+    const queryStringGenerated = FarFetchHelper.objectToQueryString(queryParams);
 
     expect(url).toBe('http://example.com/usersddzz');
     expect(errorMsg).toBe(requestErrorMsg);
@@ -507,11 +518,13 @@ describe('testing options on instantiation', () => {
     expect(mode).toBe('no-cors');
     expect(keepalive).toBe(true);
     expect(data).toBe(requestData);
-    expect(URLParams).toBe(requestParamsData);
+    expect(queryParams).toBe(requestParamsData);
+    expect(queryString).toBe(queryStringGenerated);
     expect(files).toEqual(file);
     expect(globalBeforeSend).toBe(true);
     expect(globalAfterSend).toBe(true);
     expect(defaultOptionsUsed).toBe(true);
+    expect(responseType).toBe('arrayBuffer');
   });
 
   it('should NOT run beforeSend() hook function', async () => {
@@ -609,62 +622,44 @@ describe('testing options on instantiation', () => {
 });
 
 describe('testing automatically transforming response body, but allowing manual as well', () => {
-  it('should transform the response body to JSON if response header is JSON content-type, but still be able do it manually as well', async () => {
-    const afterSendMock = jest.fn((response) => response);
-
-    const ff = new FarFetch({ afterSend: afterSendMock });
+  const transformResponse = async ({ type, isManual = false }) => {
+    const ff = new FarFetch({
+      defaultResponseType: isManual ? null : type,
+    });
 
     const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
-    fetchMock.post('http://example.com/usersei', {
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    const url = `http://example.com/usersei${type}${isManual ? 'yes' : 'no'}`;
 
-    const response = await ff.post('http://example.com/usersei', {
-      headers: { 'Content-Type': 'application/json' },
-      data,
-    });
+    fetchMock.post(url, { body: JSON.stringify(data) });
 
-    const responseParam = afterSendMock.mock.calls[0][0];
+    const response = await ff.post(url, { data });
 
-    const responseJSONManualTransform = await response.json();
+    let responseData = isManual ? await response[type]() : response.responseData;
 
-    expect(response.status).toEqual(200);
+    if (type === 'arrayBuffer') {
+      responseData = JSON.parse(new TextDecoder().decode(responseData));
+    } else if (type === 'blob') {
+      responseData = JSON.parse(await responseData.text());
+    }
 
-    expect(response.responseJSON).toEqual(data);
-
-    expect(response.responseJSON).toEqual(responseJSONManualTransform);
-
-    expect(response).toEqual(responseParam);
-  });
-
-  it('should transform the response body to text if response header is text content-type, but still be able do it manually as well', async () => {
-    const afterSendMock = jest.fn((response) => response);
-
-    const ff = new FarFetch({ afterSend: afterSendMock });
-
-    const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
-
-    fetchMock.post('http://example.com/userseir', {
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(data),
-    });
-
-    const response = await ff.post('http://example.com/userseir', {
-      headers: { 'Content-Type': 'text/plain' },
-    });
-
-    const responseParam = afterSendMock.mock.calls[0][0];
-
-    const responseTextManualTransform = await response.text();
+    const dataFormatted = type === 'text' ? JSON.stringify(data) : data;
 
     expect(response.status).toEqual(200);
 
-    expect(response.responseText).toEqual(JSON.stringify(data));
+    expect(responseData).toEqual(dataFormatted);
+  };
 
-    expect(response.responseText).toEqual(responseTextManualTransform);
+  const responseTypes = ['json', 'text', 'blob', 'arrayBuffer'];
 
-    expect(response).toEqual(responseParam);
+  const texts = ['manually with vanilla Fetch API', 'automatically with FarFetch'];
+  const isManuals = [true, false];
+
+  isManuals.forEach((isManual, index) => {
+    responseTypes.forEach((responseType) => {
+      it(`should all to transform the body ${texts[index]} with ${responseType}`, async () => {
+        await transformResponse({ type: responseType, isManual });
+      });
+    });
   });
 });
