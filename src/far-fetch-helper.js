@@ -1,3 +1,9 @@
+/**
+ * Return types available.
+ *
+ * @typedef {('arrayBuffer'|'blob'|'formData'|'json'|'text'|null)} ReturnType
+ */
+
 /** FarFetch helper class. */
 export default class FarFetchHelper {
   /**
@@ -10,10 +16,22 @@ export default class FarFetchHelper {
     return Object.prototype.toString.call(value) === '[object Object]';
   }
 
+  /**
+   * Checks if value is an empty object.
+   *
+   * @param {*} value - The value to check.
+   * @returns {boolean} Whether or not value is an empty object.
+   */
   static isEmptyObject(value) {
     return this.isPlainObject(value) && Object.keys(value).length === 0;
   }
 
+  /**
+   * Checks if return type is valid.
+   *
+   * @param {ReturnType} type
+   * @returns {boolean}
+   */
   static isValidReturnType(type) {
     return type === 'arrayBuffer' || 'blob' || 'formData' || 'json' || 'text' || null;
   }

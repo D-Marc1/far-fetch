@@ -36,8 +36,8 @@ export { FarFetchError };
  * @property {Object.<string, string|number|null|boolean|Array|Object>} [data = {}] - Data sent to
  * server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET,
  * HEAD, DELETE.
- * @property {Object.<string, string|number|null|boolean|Array|Object>} [URLParams = {}] - URL query
- * params string. Don't use both `data` and `URLParams` together with GET, HEAD or DELETE, as
+ * @property {Object.<string, string|number|null|boolean|Array|Object>} [queryParams = {}] - URL query
+ * params string. Don't use both `data` and `queryParams` together with GET, HEAD or DELETE, as
  * they're redundant in these cases. Pick one or the other, as they will both have the same effect.
  * @property {File|File[]|Object.<string, File>|Object.<string, File[]>} [files] - Files to upload
  * to server.
@@ -225,6 +225,12 @@ export default class FarFetch {
     return `Error ${action} ${errorMsgNoun}`;
   }
 
+  /**
+   * Get dynamic options.
+   *
+   * @private
+   * @returns {Promise<RequestOptions>} - Dynamic options.
+   */
   async getDynamicOptions() {
     let dynamicOptions;
 
@@ -244,7 +250,19 @@ export default class FarFetch {
     return dynamicOptions;
   }
 
-  async mergeOptions({ rest, defaultOptionsUsed }) {
+  /**
+   * Merge all fetch options together.
+   *
+   * @private
+   * @param {Object} options
+   * @param {boolean} [options.defaultOptionsUsed = true] - Will this specific request use the
+   * default options specified on instantiation and the return value of `dynamicOptions()`?
+   * @param {...RequestInit} [options.rest = {}] -
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options }
+   * from Fetch API.
+   * @returns {Promise<RequestOptions>} - Merged request options.
+   */
+  async mergeOptions({ defaultOptionsUsed, rest }) {
     let options;
 
     const dynamicOptions = await this.getDynamicOptions();
@@ -257,7 +275,7 @@ export default class FarFetch {
           throw new TypeError('Return value of beforeSend() must be plain object');
         }
 
-        // Deep merge default options and beforeSend() options; beforeSendOptions takes precedence
+        // Deep merge default options and dynamicOptions(); dynamicOptions() takes precedence
         defaultOptions = deepMerge(defaultOptions, dynamicOptions);
       }
 
@@ -278,8 +296,8 @@ export default class FarFetch {
    * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.data = {}] - Data
    * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
    * for: GET, HEAD, DELETE.
-   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.URLParams = {}] -
-   * URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or
+   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.queryParams = {}] -
+   * URL query params string. Don't use both `data` and `queryParams` together with GET, HEAD or
    * DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the
    * same effect.
    * @param {Object} [options.dynamicOptions = {}] - Dynamic options to be set, like a token stored
@@ -289,12 +307,12 @@ export default class FarFetch {
    * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} [options.files] - Files to
    * upload to server.
    * @param {...RequestInit} [options.rest = {}] -
-   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options }
    * from Fetch API.
    */
   async setFetchOptions({
     data = {},
-    URLParams = {},
+    queryParams = {},
     defaultOptionsUsed,
     files,
     ...rest
@@ -307,7 +325,7 @@ export default class FarFetch {
 
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
-    queryString = FarFetchHelper.objectToQueryString(URLParams);
+    queryString = FarFetchHelper.objectToQueryString(queryParams);
 
     if (files) { // Files property used, so must be upload
       const formData = FarFetchHelper.createFormData({ files, data });
@@ -320,8 +338,8 @@ export default class FarFetch {
     } else if (Object.keys(data).length > 0) {
       // Default is URL query string. GET/HEAD can't be used with body. Body is optional for DELETE.
       if (options.method === 'GET' || options.method === 'DELETE' || options.method === 'HEAD') {
-        if (Object.keys(data).length > 0 && Object.keys(URLParams).length > 0) {
-          throw new FarFetchError(`Don't use both 'data' and 'URLParams' together with GET, HEAD or 
+        if (Object.keys(data).length > 0 && Object.keys(queryParams).length > 0) {
+          throw new FarFetchError(`Don't use both 'data' and 'queryParams' together with GET, HEAD or 
           DELETE, as they're redundant in these cases. Pick one or the other, as they will both have
           the same effect, but prefer 'data' in this case for consistency.`);
         }
@@ -372,6 +390,15 @@ export default class FarFetch {
     return responseCloned;
   }
 
+  /**
+   * Get the full URL, with the query string.
+   *
+   * @private
+   * @param options
+   * @param {string} [options.url] - The URL.
+   * @param {string} [options.queryString] - The query string.
+   * @returns {string} The full URL.
+   */
   getFullURL({ url, queryString }) {
     let fullURL = `${url}${queryString}`;
 
@@ -385,6 +412,15 @@ export default class FarFetch {
     return fullURL;
   }
 
+  /**
+   * Run beforeSend() global function.
+   *
+   * @private
+   * @param {object} options
+   * @param {beforeSendCallback} [options.beforeSendObjectParameters] - Function to do something
+   * before.
+   * each fetch request. Can return object with RequestOptions to add or override options.
+   */
   async runBeforeSend({ beforeSendObjectParameters }) {
     const { globalBeforeSend } = beforeSendObjectParameters;
 
@@ -403,6 +439,15 @@ export default class FarFetch {
     }
   }
 
+  /**
+   * Run afterSend() global function.
+   *
+   * @private
+   * @param {object} options
+   * @param {afterSendCallback} [options.globalAfterSend] - Function to do something after each
+   * fetch request.
+   * @param {ResponsePlus} - Fetch API response plus added properties for syntactic sugar.
+   */
   async runAfterSend({ globalAfterSend, response }) {
     // If globalAfterSend option is set to true and afterSend() declared on instantiation
     if (globalAfterSend && typeof this.afterSend === 'function') {
@@ -418,6 +463,12 @@ export default class FarFetch {
     }
   }
 
+  /**
+   * Run errorHandler() global function.
+   *
+   * @private
+   * @param {object} options
+   */
   async runErrorHandler({
     response, error, errorMsg, errorMsgNoun, options,
   }) {
@@ -446,9 +497,8 @@ export default class FarFetch {
    * Request function called on every CRUD function.
    *
    * @param {string} url - The URL.
-   * @param {Object} options
-   * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD'} options.method - The CRUD method.
-   * @param {...RequestOptions} [options.RequestOptions]
+   * @param {object} options
+   * @param {RequestOptions} [options.requestOptions]
    * @returns {Promise<ResponsePlus>}
    * @throws {RequestException}
    *
@@ -461,7 +511,7 @@ export default class FarFetch {
    */
   async fetch(url, {
     data = {},
-    URLParams = {},
+    queryParams = {},
     files,
     errorMsg = '',
     errorMsgNoun = '',
@@ -473,7 +523,7 @@ export default class FarFetch {
   }) {
     const { queryString, options } = await this.setFetchOptions({
       data,
-      URLParams,
+      queryParams,
       defaultOptionsUsed,
       files,
       ...rest,
@@ -483,7 +533,7 @@ export default class FarFetch {
       url,
       fetchAPIOptions: options,
       data,
-      URLParams,
+      queryParams,
       queryString,
       files,
       errorMsg,

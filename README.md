@@ -65,7 +65,7 @@ thin wrapper. The main advantages over vanilla `Fetch` are as follows:
     - [POST Request](#post-request)
     - [application/x-www-form-urlencoded Request](#applicationx-www-form-urlencoded-request)
     - [Array or Object as Value for Key for GET Request](#array-or-object-as-value-for-key-for-get-request)
-    - [Passing in URLParams to Request](#passing-in-urlparams-to-request)
+    - [Passing in queryParams to Request](#passing-in-queryparams-to-request)
   - [Uploading Files](#uploading-files)
     - [Uploading One File](#uploading-one-file)
     - [Uploading Multiple Files](#uploading-multiple-files)
@@ -113,6 +113,17 @@ However, it really shouldn't be necessary in the majority of use cases. Adding
 data to a `GET` and `POST` request is done in two separate ways in `Fetch API`.
 `GET` requests must use appended URL query parameters, while `POST` requests
 generally use a stringified object used as the `body` property.
+
+Here's a table showing which requests will use either the **body** or **URL query params** when passing in an object to the `data` property for a request. This is because `FarFetch` is smart enough to correlate this to the default request data type. In some cases, both can be used via seperate request properties, like `FarFetch`'s custom `queryParams` property or `Fetch APIs` body property.
+
+| **Type** | **body**          | **URL Params** |
+|----------|-------------------|----------------|
+| HEAD     | ❌ (Can't be used) | ✅ (Default)    |
+| GET      | ❌ (Can't be used) | ✅ (Default)    |
+| POST     | ✅ (Default)       | ✅ (Optional)   |
+| PATCH    | ✅ (Default)       | ✅ (Optional)   |
+| PUT      | ✅ (Default)       | ✅ (Optional)   |
+| DELETE   | ✅ (Optional)      | ✅ (Default)    |
 
 ### GET Request
 
@@ -264,24 +275,24 @@ make any sort of request.
 always be `application/json`, unless `application/x-www-form-urlencoded` is
 specified or if it's a file upload*.
 
-### Passing in URLParams to Request
+### Passing in queryParams to Request
 
 This is specifically for converting to a `URL query string`, which differs from
 `data`, which *detects* the default type (`body` or `query string`).
 
-It's recommended to strictly use the `URLParams` option in cases where `POST`,
+It's recommended to strictly use the `queryParams` option in cases where `POST`,
 `POST` and `PATCH` are used, as the default behavior for passing in `data` in
 this case will result in passing in the object to `body`. You can still pass in
-`URLParams` on `GET`, `HEAD` and `DELETE`, but you can't combine it with `data`.
+`queryParams` on `GET`, `HEAD` and `DELETE`, but you can't combine it with `data`.
 This is for consistency purposes, as it would be confusing as to why you'd be
-using `data` and `URLParams` in the latter ones, as they would achieve the same
+using `data` and `queryParams` in the latter ones, as they would achieve the same
 result in this case. In fact, `FarFetch` even throws an exception in this
 senario.  
 
 ```js
 async addPerson() {
   const { responseData } = await ff.post('https://example.com/people', {
-    URLParams: { weight: 75 },
+    queryParams: { weight: 75 },
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
@@ -486,7 +497,7 @@ precedence of them all, however.
 
 ```js
 const ff = new FarFetch({
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'text/plain' },
   cache: 'reload',
   dynamicOptions() {
     // Use authorization header if token set in localStorage
@@ -494,6 +505,7 @@ const ff = new FarFetch({
       return {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
+          headers: { 'Content-Type': 'application/json' },
         },
       };
     }
@@ -515,7 +527,7 @@ So if you're logged in, your request would have the following options.
 
 Notice how the `Content-Type` is set to `text/plain`, rather than
 `application/json`. As stated before, this is because the return on
-`beforeSend()` takes precedence on the deep merge.
+`dynamicOptions()` takes precedence on the deep merge.
 
 ## Getting Response
 
@@ -611,7 +623,7 @@ const ff = new FarFetch({
     errorMsgNoun,
     fetchAPIOptions,
     data,
-    URLParams,
+    queryParams,
     queryString,
     files,
     globalBeforeSend,
@@ -1149,7 +1161,7 @@ The request object options without Fetch API options.
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | [data] | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code> | <code>{}</code> | Data sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET, HEAD, DELETE. |
-| [URLParams] | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code> | <code>{}</code> | URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the same effect. |
+| [queryParams] | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code> | <code>{}</code> | URL query params string. Don't use both `data` and `queryParams` together with GET, HEAD or DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the same effect. |
 | [files] | <code>File</code> \| <code>Array.&lt;File&gt;</code> \| <code>Object.&lt;string, File&gt;</code> \| <code>Object.&lt;string, Array.&lt;File&gt;&gt;</code> |  | Files to upload to server. Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys. |
 | [errorMsgNoun] | <code>string</code> | <code>&#x27;&#x27;</code> | Appended error message noun to global error handler. |
 | [errorMsg] | <code>string</code> | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun`. |

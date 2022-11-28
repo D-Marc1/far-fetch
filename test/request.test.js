@@ -37,7 +37,7 @@ describe('testing api calls', () => {
 describe('testing data parameters', () => {
   const ff = new FarFetch();
 
-  const queryStringTest = async ({ type, URLParams = false }) => {
+  const queryStringTest = async ({ type, queryParams = false }) => {
     const data = {
       name: 'Bobby Big Boy',
       gender: 'Male',
@@ -54,13 +54,13 @@ describe('testing data parameters', () => {
 
     const params = `${new URLSearchParams(dataStringified)}`;
 
-    const url = `http://example.com/users${URLParams ? 'UP' : 'NoUP'}`;
+    const url = `http://example.com/users${queryParams ? 'UP' : 'NoUP'}`;
 
     const URLWithParams = `${url}?${params}`;
 
     fetchMock[type](URLWithParams, 200);
 
-    const options = URLParams ? { URLParams: data } : { data };
+    const options = queryParams ? { queryParams: data } : { data };
 
     const response = await ff[type](url, options);
 
@@ -101,8 +101,8 @@ describe('testing data parameters', () => {
   });
 
   ['GET', 'HEAD', 'DELETE'].forEach((requestHeaderType) => {
-    it(`should successfully do a ${requestHeaderType} request with URLParams parameters and automatically convert object and array types`, () => {
-      queryStringTest({ type: requestHeaderType.toLowerCase(), URLParams: true });
+    it(`should successfully do a ${requestHeaderType} request with queryParams parameters and automatically convert object and array types`, () => {
+      queryStringTest({ type: requestHeaderType.toLowerCase(), queryParams: true });
     });
   });
 
@@ -486,7 +486,7 @@ describe('testing options on instantiation', () => {
       errorMsg: requestErrorMsg,
       errorMsgNoun: 'user',
       data: requestData,
-      URLParams: requestParamsData,
+      queryParams: requestParamsData,
       cache: 'force-cache',
       files: file,
       responseType: 'arrayBuffer',
@@ -500,7 +500,7 @@ describe('testing options on instantiation', () => {
       errorMsgNoun,
       fetchAPIOptions: { cache, mode, keepalive },
       data,
-      URLParams,
+      queryParams,
       queryString,
       files,
       globalBeforeSend,
@@ -509,7 +509,7 @@ describe('testing options on instantiation', () => {
       responseType,
     } = beforeSendMock.mock.calls[0][0];
 
-    const queryStringGenerated = FarFetchHelper.objectToQueryString(URLParams);
+    const queryStringGenerated = FarFetchHelper.objectToQueryString(queryParams);
 
     expect(url).toBe('http://example.com/usersddzz');
     expect(errorMsg).toBe(requestErrorMsg);
@@ -518,7 +518,7 @@ describe('testing options on instantiation', () => {
     expect(mode).toBe('no-cors');
     expect(keepalive).toBe(true);
     expect(data).toBe(requestData);
-    expect(URLParams).toBe(requestParamsData);
+    expect(queryParams).toBe(requestParamsData);
     expect(queryString).toBe(queryStringGenerated);
     expect(files).toEqual(file);
     expect(globalBeforeSend).toBe(true);
