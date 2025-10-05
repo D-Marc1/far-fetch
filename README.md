@@ -11,10 +11,10 @@ npm i @websitebeaver/far-fetch
 Then include it in the files you want to use it in like so:
 
 ```js
-import FarFetch from "@websitebeaver/far-fetch";
+import FarFetch from '@websitebeaver/far-fetch';
 
 // If you need to manually handle errors
-import FarFetch, { FarFetchError } from "@websitebeaver/far-fetch";
+import FarFetch, { FarFetchError } from '@websitebeaver/far-fetch';
 ```
 
 ## Instantiating Class
@@ -310,9 +310,9 @@ Converted to `Fetch API`, the following will result in:
 
 ```js
 const response = await fetch(`https://example.com/people?weight=75`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ name: "Bobby Big Boy", gender: "Male", age: 5 }),
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Bobby Big Boy', gender: 'Male', age: 5 }),
 });
 ```
 
@@ -470,9 +470,9 @@ discouraged in most cases, in favor of, `FarFetch`'s `data` parameter.
 ### Set Options for Single Request
 
 ```js
-await ff.get("https://example.com", {
-  headers: { "Content-Type": "application/json" },
-  cache: "reload",
+await ff.get('https://example.com', {
+  headers: { 'Content-Type': 'application/json' },
+  cache: 'reload',
 });
 ```
 
@@ -484,8 +484,8 @@ declaring these options when you instantiate `FarFetch`.
 
 ```js
 const ff = new FarFetch({
-  headers: { "Content-Type": "application/json" },
-  cache: "reload",
+  headers: { 'Content-Type': 'application/json' },
+  cache: 'reload',
 });
 ```
 
@@ -503,15 +503,15 @@ precedence of them all, however.
 
 ```js
 const ff = new FarFetch({
-  headers: { "Content-Type": "text/plain" },
-  cache: "reload",
+  headers: { 'Content-Type': 'text/plain' },
+  cache: 'reload',
   dynamicOptions() {
     // Use authorization header if token set in localStorage
-    if (localStorage.getItem("token")) {
+    if (localStorage.getItem('token')) {
       return {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          headers: { "Content-Type": "application/json" },
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          headers: { 'Content-Type': 'application/json' },
         },
       };
     }
@@ -550,7 +550,7 @@ how you'd be doing it in native `Fetch` as well.
 the the `Response` `Body` and transforming it to your type.
 
 ```js
-const response = await ff.get("https://example.com/people", {
+const response = await ff.get('https://example.com/people', {
   responseType: null,
 });
 
@@ -567,14 +567,14 @@ property, and locally for each request call, via the `responseType` property.
 The default value for `defaultResponseType` is **json**.
 
 ```js
-const { responseData } = await ff.get("https://example.com/people");
+const { responseData } = await ff.get('https://example.com/people');
 
 return responseData;
 ```
 
 ```js
-const { responseData } = await ff.get("https://example.com/people", {
-  responseType: "text",
+const { responseData } = await ff.get('https://example.com/people', {
+  responseType: 'text',
 });
 
 return responseData;
@@ -584,9 +584,9 @@ The previous example showed how change the `responseType` to **text** for an
 individual request. The following example will show how this done globally.
 
 ```js
-const ff = new FarFetch({ defaultResponseType: "text" });
+const ff = new FarFetch({ defaultResponseType: 'text' });
 
-const { responseData } = await ff.get("https://example.com/people");
+const { responseData } = await ff.get('https://example.com/people');
 
 return responseData;
 ```
@@ -598,14 +598,14 @@ Most applications will likely use the same domain for most or even all requests.
 
 ```js
 const ff = new FarFetch({
-  baseURL: "https://example.com",
+  baseURL: 'https://example.com',
 });
 ```
 
 Now request like the following will work.
 
 ```js
-await ff.get("/people");
+await ff.get('/people');
 ```
 
 But what if you want to use a different base URL for just a few requests in your
@@ -613,7 +613,7 @@ application? `FarFetch` automatically detects if an absolute path is used, and
 will override the `baseURL`.
 
 ```js
-await ff.get("https://notexample.com/posts");
+await ff.get('https://notexample.com/posts');
 ```
 
 ## Before/After Send Hook
@@ -637,10 +637,10 @@ const ff = new FarFetch({
     defaultOptionsUsed,
     responseType,
   }) {
-    console.log("do this before every request");
+    console.log('do this before every request');
   },
   afterSend(response) {
-    console.log("do this after every request");
+    console.log('do this after every request');
   },
 });
 ```
@@ -651,7 +651,7 @@ You might want to use the `beforeSend()` or `afterSend(response)` hook on nearly
 all requests, but turn it off certain ones.
 
 ```js
-await ff.get("http://example.com/", {
+await ff.get('http://example.com/', {
   globalBeforeSend: false,
   globalAfterSend: false,
 });
@@ -665,18 +665,18 @@ on a failed request, and forces you to throw your own.
 **Fetch API**
 
 ```js
-const data = { name: "Bobby Big Boy", gender: "Male", age: 5 };
+const data = { name: 'Bobby Big Boy', gender: 'Male', age: 5 };
 
 try {
-  const response = await fetch("https://example.com/people", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const response = await fetch('https://example.com/people', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) throw new Error("Server error.");
+  if (!response.ok) throw new Error('Server error.');
 } catch {
-  alert("Error adding person");
+  alert('Error adding person');
 }
 ```
 
@@ -688,9 +688,9 @@ default template, dependent on the CRUD type.
 
 ```js
 try {
-  await ff.post("https://example.com/person", {
-    data: { name: "Bobby Big Boy", gender: "Male", age: 5 },
-    errorMsgNoun: "person",
+  await ff.post('https://example.com/person', {
+    data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
+    errorMsgNoun: 'person',
   });
 } catch {}
 ```
@@ -702,7 +702,7 @@ const ff = new FarFetch({
   errorHandler({ error, userMessage, response }) {
     if (response.status === 401) {
       // Unauthorized
-      router.push("/login"); // Go to login page if logged out
+      router.push('/login'); // Go to login page if logged out
     }
 
     // Error message will be presented to the user in an alert
@@ -720,16 +720,16 @@ Here's the basic template of what going into the `userMessage` parameter
 property.
 
 ```js
-let action = "";
+let action = '';
 
-if (method === "GET" || method === "HEAD") {
-  action = "fetching";
-} else if (method === "POST") {
-  action = "adding";
-} else if (method === "PUT" || method === "PATCH") {
-  action = "updating";
-} else if (method === "DELETE") {
-  action = "deleting";
+if (method === 'GET' || method === 'HEAD') {
+  action = 'fetching';
+} else if (method === 'POST') {
+  action = 'adding';
+} else if (method === 'PUT' || method === 'PATCH') {
+  action = 'updating';
+} else if (method === 'DELETE') {
+  action = 'deleting';
 }
 
 const userMessage = `Error ${action} ${errorMsgNoun}`;
@@ -743,16 +743,16 @@ property, which accepts function.
 ```js
 const ff = new FarFetch({
   errorMsgTemplate: ({ method, errorMsgNoun }) => {
-    let action = "";
+    let action = '';
 
-    if (method === "GET" || method === "HEAD") {
-      action = "retrieving";
-    } else if (method === "POST") {
-      action = "posting";
-    } else if (method === "PUT" || method === "PATCH") {
-      action = "changing";
-    } else if (method === "DELETE") {
-      action = "removing";
+    if (method === 'GET' || method === 'HEAD') {
+      action = 'retrieving';
+    } else if (method === 'POST') {
+      action = 'posting';
+    } else if (method === 'PUT' || method === 'PATCH') {
+      action = 'changing';
+    } else if (method === 'DELETE') {
+      action = 'removing';
     }
 
     return `Error ${action} ${errorMsgNoun}.`;
@@ -770,8 +770,8 @@ Sometimes you might just want to change the message for a unique request. You
 can accomplish this via the `errorMsg` property.
 
 ```js
-await ff.get("https://example.com/users", {
-  errorMsg: "Oh no! We are having trouble retrieving your friends!",
+await ff.get('https://example.com/users', {
+  errorMsg: 'Oh no! We are having trouble retrieving your friends!',
 });
 ```
 
@@ -926,32 +926,32 @@ Create FarFetch object.
 
 ```js
 const ff = new FarFetch({
-  baseURL: "https://my-url.com",
+  baseURL: 'https://my-url.com',
   dynamicOptions() {
     // Use authorization header if token set in localStorage
-    if (localStorage.getItem("token")) {
+    if (localStorage.getItem('token')) {
       return {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       };
     }
   },
   beforeSend() {
-    console.log("Doing something before every request");
+    console.log('Doing something before every request');
   },
   afterSend(response) {
-    console.log("Doing after before every request");
+    console.log('Doing after before every request');
   },
   errorHandler({ error, userMessage, response }) {
     if (response.status === 401) {
       // Unauthorized
-      router.push("/login");
+      router.push('/login');
     }
 
     alert(userMessage); // Error message from either errorMsg or errorMsgNoun will be used
   },
-  headers: { "Content-Type": "application/json" },
+  headers: { 'Content-Type': 'application/json' },
 });
 ```
 
@@ -976,10 +976,10 @@ Request function called on every CRUD function.
 **Example**
 
 ```js
-await ff.fetch("https://my-website.com/users", {
-  method: "GET",
+await ff.fetch('https://my-website.com/users', {
+  method: 'GET',
   data: { id: 23 },
-  errorMsgNoun: "users",
+  errorMsgNoun: 'users',
 });
 ```
 
@@ -1002,9 +1002,9 @@ GET fetch request.
 **Example**
 
 ```js
-await ff.get("https://my-website.com/users", {
+await ff.get('https://my-website.com/users', {
   data: { id: 23 },
-  errorMsgNoun: "users",
+  errorMsgNoun: 'users',
 });
 ```
 
@@ -1028,9 +1028,9 @@ if `FarFetch` data option is provided.
 **Example**
 
 ```js
-await ff.post("https://my-website.com/user/23", {
-  data: { gender: "male", age: 39 },
-  errorMsgNoun: "user",
+await ff.post('https://my-website.com/user/23', {
+  data: { gender: 'male', age: 39 },
+  errorMsgNoun: 'user',
 });
 ```
 
@@ -1054,9 +1054,9 @@ if `FarFetch` data option is provided.
 **Example**
 
 ```js
-await ff.put("https://my-website.com/user/47", {
-  data: { gender: "female", age: 22 },
-  errorMsgNoun: "user",
+await ff.put('https://my-website.com/user/47', {
+  data: { gender: 'female', age: 22 },
+  errorMsgNoun: 'user',
 });
 ```
 
@@ -1080,9 +1080,9 @@ header if `FarFetch` data option is provided.
 **Example**
 
 ```js
-await ff.patch("https://my-website.com/user/91", {
+await ff.patch('https://my-website.com/user/91', {
   data: { age: 18 },
-  errorMsgNoun: "user",
+  errorMsgNoun: 'user',
 });
 ```
 
@@ -1105,8 +1105,8 @@ DELETE fetch request.
 **Example**
 
 ```js
-await ff.delete("https://my-website.com/user/107", {
-  errorMsgNoun: "user",
+await ff.delete('https://my-website.com/user/107', {
+  errorMsgNoun: 'user',
 });
 ```
 
@@ -1129,7 +1129,7 @@ HEAD fetch request.
 **Example**
 
 ```js
-await ff.head("https://my-website.com/user/107");
+await ff.head('https://my-website.com/user/107');
 ```
 
 <a name="FarFetchError"></a>
