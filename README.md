@@ -114,16 +114,22 @@ data to a `GET` and `POST` request is done in two separate ways in `Fetch API`.
 `GET` requests must use appended URL query parameters, while `POST` requests
 generally use a stringified object used as the `body` property.
 
-Here's a table showing which requests will use either the **body** or **URL query params** when passing in an object to the `data` property for a request. This is because `FarFetch` is smart enough to correlate this to the default request data type. In some cases, both can be used via separate request properties, like `FarFetch`'s custom `queryParams` property or `Fetch APIs` body property.
+Here's a table showing which requests will use either the **Body** or **Query Params** when passing in an object to the `data` property for a request. This is because `FarFetch` is smart enough to correlate this to the default request data type. In some cases, both can be used via separate request properties, like `FarFetch`'s custom `queryParams` property or `Fetch APIs` body property.
 
-| **Type** | **body**           | **URL Params** |
-| -------- | ------------------ | -------------- |
-| HEAD     | ❌ (Can't be used) | ✅ (Default)   |
-| GET      | ❌ (Can't be used) | ✅ (Default)   |
-| POST     | ✅ (Default)       | ✅ (Optional)  |
-| PATCH    | ✅ (Default)       | ✅ (Optional)  |
-| PUT      | ✅ (Default)       | ✅ (Optional)  |
-| DELETE   | ✅ (Optional)      | ✅ (Default)   |
+| **Type** | **Body** | **Query Params** |
+| -------- | -------- | ---------------- |
+| HEAD     | ❌       | ✅               |
+| GET      | ❌       | ✅               |
+| POST     | ✅       | ☑️               |
+| PATCH    | ✅       | ☑️               |
+| PUT      | ✅       | ☑️               |
+| DELETE   | ☑️       | ☑️               |
+
+Key:
+
+- ✅ Default
+- ☑️ Optional / Can be used
+- ❌ Can't be used
 
 ### GET Request
 
