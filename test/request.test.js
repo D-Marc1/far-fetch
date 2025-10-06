@@ -357,7 +357,7 @@ describe('testing options on instantiation', () => {
 
     expect(response.status).toEqual(400);
 
-    expect(response.responseData).toEqual(data);
+    expect(response.responseContent).toEqual(data);
   });
 
   it(`should run errorHandler() hook function with errorMessage
@@ -635,19 +635,19 @@ describe('testing automatically transforming response body, but allowing manual 
 
     const response = await ff.post(url, { data });
 
-    let responseData = isManual ? await response[type]() : response.responseData;
+    let responseContent = isManual ? await response[type]() : response.responseContent;
 
     if (type === 'arrayBuffer') {
-      responseData = JSON.parse(new TextDecoder().decode(responseData));
+      responseContent = JSON.parse(new TextDecoder().decode(responseContent));
     } else if (type === 'blob') {
-      responseData = JSON.parse(await responseData.text());
+      responseContent = JSON.parse(await responseContent.text());
     }
 
     const dataFormatted = type === 'text' ? JSON.stringify(data) : data;
 
     expect(response.status).toEqual(200);
 
-    expect(responseData).toEqual(dataFormatted);
+    expect(responseContent).toEqual(dataFormatted);
   };
 
   const responseTypes = ['json', 'text', 'blob', 'arrayBuffer'];

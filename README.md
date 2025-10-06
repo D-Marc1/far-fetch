@@ -155,11 +155,11 @@ async getPerson() {
 
 ```js
 async getPerson() {
-  const { responseData } = await ff.get('https://example.com/people', {
+  const { responseContent } = await ff.get('https://example.com/people', {
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseData;
+  return responseContent;
 }
 ```
 
@@ -187,11 +187,11 @@ async addPerson() {
 
 ```js
 async addPerson() {
-  const { responseData } = await ff.post('https://example.com/people', {
+  const { responseContent } = await ff.post('https://example.com/people', {
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseData;
+  return responseContent;
 }
 ```
 
@@ -219,12 +219,12 @@ async addPerson() {
 
 ```js
 async addPerson() {
-  const { responseData } = await ff.post('https://example.com/people', {
+  const { responseContent } = await ff.post('https://example.com/people', {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseData;
+  return responseContent;
 }
 ```
 
@@ -257,7 +257,7 @@ that's an array or object. `FarFetch` automatically takes care of this.
 
 ```js
 async getPerson() {
-  const { responseData } = await ff.get(`https://example.com/people`, {
+  const { responseContent } = await ff.get(`https://example.com/people`, {
     data: {
       name: 'Bobby Big Boy',
       hobbies: ['collecting stamps', 'sports'],
@@ -265,7 +265,7 @@ async getPerson() {
     },
   });
 
-  return responseData;
+  return responseContent;
 }
 ```
 
@@ -297,19 +297,19 @@ scenario.
 
 ```js
 async addPerson() {
-  const { responseData } = await ff.post('https://example.com/people', {
-    queryParams: { weight: 75 },
+  const { responseContent } = await ff.post('https://example.com/people', {
+    queryParams: { weight: 75, height: 160 },
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
   });
 
-  return responseData;
+  return responseContent;
 }
 ```
 
 Converted to `Fetch API`, the following will result in:
 
 ```js
-const response = await fetch(`https://example.com/people?weight=75`, {
+const response = await fetch(`https://example.com/people?weight=75&height=160`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ name: 'Bobby Big Boy', gender: 'Male', age: 5 }),
@@ -547,19 +547,19 @@ methods](https:/developer.mozilla.org/en-US/docs/Web/API/Body#Methods):
 how you'd be doing it in native `Fetch` as well.
 
 `FarFetch` supports the vanilla `Fetch` way of retrieving data, by awaiting for
-the the `Response` `Body` and transforming it to your type.
+the the `Response` `Body` and transforming it to your type. This can be achieved by setting `responseType: null` in the options.
 
 ```js
 const response = await ff.get('https://example.com/people', {
   responseType: null,
 });
 
-const responseData = await response.json();
+const responseContent = await response.json();
 
-return responseData;
+return responseContent;
 ```
 
-You can also use `FarFetch`'s handy `responseData` property, for your
+You can also use `FarFetch`'s handy `responseContent` property, for your
 convenience, instead of having to await for either `response.json()` or
 `response.text()`. These are properties that were simply added to the
 `Response` object, which is set both globally, via the `defaultResponseType`
@@ -567,17 +567,17 @@ property, and locally for each request call, via the `responseType` property.
 The default value for `defaultResponseType` is **json**.
 
 ```js
-const { responseData } = await ff.get('https://example.com/people');
+const { responseContent } = await ff.get('https://example.com/people');
 
-return responseData;
+return responseContent;
 ```
 
 ```js
-const { responseData } = await ff.get('https://example.com/people', {
+const { responseContent } = await ff.get('https://example.com/people', {
   responseType: 'text',
 });
 
-return responseData;
+return responseContent;
 ```
 
 The previous example showed how change the `responseType` to **text** for an
@@ -586,9 +586,9 @@ individual request. The following example will show how this done globally.
 ```js
 const ff = new FarFetch({ defaultResponseType: 'text' });
 
-const { responseData } = await ff.get('https://example.com/people');
+const { responseContent } = await ff.get('https://example.com/people');
 
-return responseData;
+return responseContent;
 ```
 
 ## Set Base URL
@@ -794,9 +794,9 @@ async register(type) {
       },
     });
 
-    const responseData = await response.json();
+    const responseContent = await response.json();
 
-    localStorage.setItem('token', responseData.token);
+    localStorage.setItem('token', responseContent.token);
 
     this.$router.push('/');
   } catch (e) {
@@ -808,7 +808,7 @@ async register(type) {
       if (response.status === 409) { // Conflict
         userMessage = 'Email is already in system';
       } else if (response.status === 400) { // Validation failed
-        const { field, validationMessage } = response.responseData;
+        const { field, validationMessage } = response.responseContent;
 
         userMessage = `${field} is ${validationMessage}`;
       }

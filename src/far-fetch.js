@@ -14,12 +14,12 @@ export { FarFetchError };
  */
 
 /**
- * Request object plus responseData, which is the transformed body, according to the specified type.
+ * Request object plus responseContent, which is the transformed body, according to the specified type.
  *
  * @typedef {Object} ResponsePlus
  * @property {Response} response - Fetch API response.
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Response|Response object}.
- * @property {ArrayBuffer|Blob|FormData|JSON|string|null} [response.responseData = null] - FarFetch
+ * @property {ArrayBuffer|Blob|FormData|JSON|string|null} [response.responseContent = null] - FarFetch
  * added property that transforms the body to the specified response type for syntactic sugar.
  */
 
@@ -374,18 +374,18 @@ export default class FarFetch {
     // allows body to be re-transformed.
     const responseCloned = response.clone();
 
-    // responseData will always be added, even if the response body isn't transformed
-    let responseData = null;
+    // responseContent will always be added, even if the response body isn't transformed
+    let responseContent = null;
 
     // Valid response and has a content type.
     if (
       FarFetchHelper.isValidReturnType(responseType) && responseType !== null
       && responseContentType
     ) {
-      responseData = await response[responseType]();
+      responseContent = await response[responseType]();
     }
 
-    Object.assign(responseCloned, { responseData });
+    Object.assign(responseCloned, { responseContent });
 
     return responseCloned;
   }
@@ -561,7 +561,7 @@ export default class FarFetch {
     } catch (error) {
       if (
         typeof this.errorHandler === 'function' && (errorMessage || errorMessageNoun)
-        && response && !Object.hasOwn(response, 'responseData')
+        && response && !Object.hasOwn(response, 'responseContent')
       ) {
         // Has a response, but hasn't been mofified yet
         response = await FarFetch.modifiedResponse({ response, responseType });
