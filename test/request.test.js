@@ -221,8 +221,8 @@ describe('testing upload', () => {
 });
 
 describe('testing options on instantiation', () => {
-  it('should accept baseURL option with relative path', async () => {
-    const ff = new FarFetch({ baseURL: 'http://example.com' });
+  it('should accept baseUrl option with relative path', async () => {
+    const ff = new FarFetch({ baseUrl: 'http://example.com' });
 
     fetchMock.get('http://example.com/usersggg', 200);
 
@@ -231,8 +231,8 @@ describe('testing options on instantiation', () => {
     expect(response.url).toEqual('http://example.com/usersggg');
   });
 
-  it('should NOT accept baseURL option with absolute path', async () => {
-    const ff = new FarFetch({ baseURL: 'http://example.com' });
+  it('should NOT accept baseUrl option with absolute path', async () => {
+    const ff = new FarFetch({ baseUrl: 'http://example.com' });
 
     fetchMock.get('https://notexample.com/users4', 200);
 
@@ -331,7 +331,7 @@ describe('testing options on instantiation', () => {
   });
 
   it('should run errorHandler() hook function and accept { userMessage, error, response } parameters', async () => {
-    const errorMsgNoun = 'user';
+    const errorMessageNoun = 'user';
 
     const errorHandlerMock = jest.fn((paramObj) => paramObj);
 
@@ -346,12 +346,12 @@ describe('testing options on instantiation', () => {
     });
 
     await expect(
-      ff.post('http://example.com/usersddz', { errorMsgNoun, data }),
+      ff.post('http://example.com/usersddz', { errorMessageNoun, data }),
     ).rejects.toThrow(FarFetchError);
 
     const { userMessage, error, response } = errorHandlerMock.mock.calls[0][0];
 
-    expect(userMessage).toEqual(`Error adding ${errorMsgNoun}`);
+    expect(userMessage).toEqual(`Error adding ${errorMessageNoun}`);
 
     expect(error instanceof FarFetchError).toBe(true);
 
@@ -360,8 +360,8 @@ describe('testing options on instantiation', () => {
     expect(response.responseData).toEqual(data);
   });
 
-  it(`should run errorHandler() hook function with errorMsg
-  INSTEAD OF errorMsgNoun`, async () => {
+  it(`should run errorHandler() hook function with errorMessage
+  INSTEAD OF errorMessageNoun`, async () => {
     const errorHandlerMock = jest.fn();
 
     const ff = new FarFetch({ errorHandler: errorHandlerMock });
@@ -370,8 +370,8 @@ describe('testing options on instantiation', () => {
 
     await expect(
       ff.get('http://example.com/usersddzq', {
-        errorMsgNoun: 'user',
-        errorMsg: 'Custom Message',
+        errorMessageNoun: 'user',
+        errorMessage: 'Custom Message',
       }),
     ).rejects.toThrow(FarFetchError);
 
@@ -424,18 +424,18 @@ describe('testing options on instantiation', () => {
     fetchMock.get('http://example.com/usersddza567', 400);
 
     await expect(
-      ff.get('http://example.com/usersddza567', { errorMsgNoun: 'user' }),
+      ff.get('http://example.com/usersddza567', { errorMessageNoun: 'user' }),
     ).rejects.toThrow(FarFetchError);
   });
 
-  it('should set custom error template with errorMsgTemplate()', async () => {
+  it('should set custom error template with errorMessageTemplate()', async () => {
     const errorHandlerMock = jest.fn(({ userMessage }) => userMessage);
 
-    const errorMessageTemplateMock = jest.fn(({ method, errorMsgNoun }) => {
+    const errorMessageTemplateMock = jest.fn(({ method, errorMessageNoun }) => {
       let message = '';
 
       if (method === 'GET') {
-        message = `Violation with ${errorMsgNoun}`;
+        message = `Violation with ${errorMessageNoun}`;
       }
 
       return message;
@@ -443,13 +443,13 @@ describe('testing options on instantiation', () => {
 
     const ff = new FarFetch({
       errorHandler: errorHandlerMock,
-      errorMsgTemplate: errorMessageTemplateMock,
+      errorMessageTemplate: errorMessageTemplateMock,
     });
 
     fetchMock.get('http://example.com/usersddzzeeq', 400);
 
     await expect(
-      ff.get('http://example.com/usersddzzeeq', { errorMsgNoun: 'user' }),
+      ff.get('http://example.com/usersddzzeeq', { errorMessageNoun: 'user' }),
     ).rejects.toThrow(FarFetchError);
 
     const { value: userMessage } = errorHandlerMock.mock.results[0];
@@ -478,13 +478,13 @@ describe('testing options on instantiation', () => {
 
     const URLWithParams = `http://example.com/usersddzz?${requestParams}`;
 
-    const requestErrorMsg = 'Error adding this particular user';
+    const requestErrorMessage = 'Error adding this particular user';
 
     fetchMock.post(URLWithParams, 200);
 
     await ff.post('http://example.com/usersddzz', {
-      errorMsg: requestErrorMsg,
-      errorMsgNoun: 'user',
+      errorMessage: requestErrorMessage,
+      errorMessageNoun: 'user',
       data: requestData,
       queryParams: requestParamsData,
       cache: 'force-cache',
@@ -496,9 +496,9 @@ describe('testing options on instantiation', () => {
 
     const {
       url,
-      errorMsg,
-      errorMsgNoun,
-      fetchAPIOptions: { cache, mode, keepalive },
+      errorMessage,
+      errorMessageNoun,
+      fetchApiOptions: { cache, mode, keepalive },
       data,
       queryParams,
       queryString,
@@ -512,8 +512,8 @@ describe('testing options on instantiation', () => {
     const queryStringGenerated = FarFetchHelper.objectToQueryString(queryParams);
 
     expect(url).toBe('http://example.com/usersddzz');
-    expect(errorMsg).toBe(requestErrorMsg);
-    expect(errorMsgNoun).toBe('user');
+    expect(errorMessage).toBe(requestErrorMessage);
+    expect(errorMessageNoun).toBe('user');
     expect(cache).toBe('force-cache');
     expect(mode).toBe('no-cors');
     expect(keepalive).toBe(true);

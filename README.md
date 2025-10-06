@@ -123,7 +123,7 @@ Here's a table showing which requests will use either the **Body** or **Query Pa
 | POST     | ✅       | ☑️               |
 | PATCH    | ✅       | ☑️               |
 | PUT      | ✅       | ☑️               |
-| DELETE   | ☑️       | ☑️               |
+| DELETE   | ☑️       | ✅                |
 
 Key:
 
@@ -594,11 +594,11 @@ return responseData;
 ## Set Base URL
 
 Most applications will likely use the same domain for most or even all requests.
-`FarFetch` has a `baseURL` option you can use when you instantiate the class.
+`FarFetch` has a `baseUrl` option you can use when you instantiate the class.
 
 ```js
 const ff = new FarFetch({
-  baseURL: 'https://example.com',
+  baseUrl: 'https://example.com',
 });
 ```
 
@@ -610,7 +610,7 @@ await ff.get('/people');
 
 But what if you want to use a different base URL for just a few requests in your
 application? `FarFetch` automatically detects if an absolute path is used, and
-will override the `baseURL`.
+will override the `baseUrl`.
 
 ```js
 await ff.get('https://notexample.com/posts');
@@ -625,9 +625,9 @@ request and the `afterSend(response)` one to do something after every request.
 const ff = new FarFetch({
   beforeSend({
     url,
-    errorMsg,
-    errorMsgNoun,
-    fetchAPIOptions,
+    errorMessage,
+    errorMessageNoun,
+    fetchApiOptions,
     data,
     queryParams,
     queryString,
@@ -681,7 +681,7 @@ try {
 ```
 
 Thankfully you don't need to worry about this with `FarFetch`. With `FarFetch`,
-you can just append the noun to `errorMsgNoun` and it'll append to a
+you can just append the noun to `errorMessageNoun` and it'll append to a
 default template, dependent on the CRUD type.
 
 **FarFetch**
@@ -690,7 +690,7 @@ default template, dependent on the CRUD type.
 try {
   await ff.post('https://example.com/person', {
     data: { name: 'Bobby Big Boy', gender: 'Male', age: 5 },
-    errorMsgNoun: 'person',
+    errorMessageNoun: 'person',
   });
 } catch {}
 ```
@@ -732,17 +732,17 @@ if (method === 'GET' || method === 'HEAD') {
   action = 'deleting';
 }
 
-const userMessage = `Error ${action} ${errorMsgNoun}`;
+const userMessage = `Error ${action} ${errorMessageNoun}`;
 ```
 
 ### Modifying the Default Error Message Template
 
-You can even override this default template with the `errorMsgTemplate`
+You can even override this default template with the `errorMessageTemplate`
 property, which accepts function.
 
 ```js
 const ff = new FarFetch({
-  errorMsgTemplate: ({ method, errorMsgNoun }) => {
+  errorMessageTemplate: ({ method, errorMessageNoun }) => {
     let action = '';
 
     if (method === 'GET' || method === 'HEAD') {
@@ -755,7 +755,7 @@ const ff = new FarFetch({
       action = 'removing';
     }
 
-    return `Error ${action} ${errorMsgNoun}.`;
+    return `Error ${action} ${errorMessageNoun}.`;
   },
 });
 ```
@@ -767,20 +767,20 @@ custom requirements.
 ### Overriding Default Error Message for Single Request
 
 Sometimes you might just want to change the message for a unique request. You
-can accomplish this via the `errorMsg` property.
+can accomplish this via the `errorMessage` property.
 
 ```js
 await ff.get('https://example.com/users', {
-  errorMsg: 'Oh no! We are having trouble retrieving your friends!',
+  errorMessage: 'Oh no! We are having trouble retrieving your friends!',
 });
 ```
 
 ### Catching Exceptions Manually
 
-Using the global `errorHandler()`, along with `errorMsgNoun` or `errorMsg`
+Using the global `errorHandler()`, along with `errorMessageNoun` or `errorMessage`
 should work fine in most cases, but sometimes you might need to handle multiple
-cases. You can easily achieve this by simply omitting both `errorMsgNoun` and
-`errorMsg`. `FarFetch` will then know not to run the global error handler. You
+cases. You can easily achieve this by simply omitting both `errorMessageNoun` and
+`errorMessage`. `FarFetch` will then know not to run the global error handler. You
 can then can the errors in a `try/catch`. Take a register account example for
 instance.
 
@@ -808,9 +808,9 @@ async register(type) {
       if (response.status === 409) { // Conflict
         userMessage = 'Email is already in system';
       } else if (response.status === 400) { // Validation failed
-        const { field, validationMsg } = response.responseData;
+        const { field, validationMessage } = response.responseData;
 
-        userMessage = `${field} is ${validationMsg}`;
+        userMessage = `${field} is ${validationMessage}`;
       }
 
       ff.errorHandler({ error, response, userMessage });
@@ -882,7 +882,7 @@ localStorage.</p>
 <dt><a href="#errorHandlerCallback">errorHandlerCallback</a> : <code>function</code></dt>
 <dd><p>Callback for global error handler.</p>
 </dd>
-<dt><a href="#errorMsgTemplateCallback">errorMsgTemplateCallback</a> ⇒ <code>string</code></dt>
+<dt><a href="#errorMessageTemplateCallback">errorMessageTemplateCallback</a> ⇒ <code>string</code></dt>
 <dd><p>Callback for overriding default error message template.</p>
 </dd>
 </dl>
@@ -914,19 +914,19 @@ Create FarFetch object.
 | Param                       | Type                                                               | Default                   | Description                                                                                                                 |
 | --------------------------- | ------------------------------------------------------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | [options]                   | <code>Object</code>                                                | <code>{}</code>           | Set options.                                                                                                                |
-| [options.baseURL]           | <code>string</code>                                                | <code>&#x27;&#x27;</code> | Base URL for each request.                                                                                                  |
+| [options.baseUrl]           | <code>string</code>                                                | <code>&#x27;&#x27;</code> | Base URL for each request.                                                                                                  |
 | [options.dynamicOptions]    | [<code>dynamicOptionsCallback</code>](#dynamicOptionsCallback)     |                           | Function that allows a dynamic option to be set, like a token stored in localStorage.                                       |
 | [options.beforeSend]        | [<code>beforeSendCallback</code>](#beforeSendCallback)             |                           | Function to do something before each fetch request. Can return object with RequestOptions to add or override options.       |
 | [options.afterSend]         | [<code>afterSendCallback</code>](#afterSendCallback)               |                           | Function to do something after each fetch request.                                                                          |
 | [options.errorHandler]      | [<code>errorHandlerCallback</code>](#errorHandlerCallback)         |                           | Global error handler.                                                                                                       |
-| [options.errorMsgTemplate]  | [<code>errorMsgTemplateCallback</code>](#errorMsgTemplateCallback) |                           | Function to modify the default error message template for `errorMsgNoun`.                                                   |
+| [options.errorMessageTemplate]  | [<code>errorMessageTemplateCallback</code>](#errorMessageTemplateCallback) |                           | Function to modify the default error message template for `errorMessageNoun`.                                                   |
 | [...options.defaultOptions] | <code>RequestInit</code>                                           | <code>{}</code>           | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
 
 **Example**
 
 ```js
 const ff = new FarFetch({
-  baseURL: 'https://my-url.com',
+  baseUrl: 'https://my-url.com',
   dynamicOptions() {
     // Use authorization header if token set in localStorage
     if (localStorage.getItem('token')) {
@@ -949,7 +949,7 @@ const ff = new FarFetch({
       router.push('/login');
     }
 
-    alert(userMessage); // Error message from either errorMsg or errorMsgNoun will be used
+    alert(userMessage); // Error message from either errorMessage or errorMessageNoun will be used
   },
   headers: { 'Content-Type': 'application/json' },
 });
@@ -979,7 +979,7 @@ Request function called on every CRUD function.
 await ff.fetch('https://my-website.com/users', {
   method: 'GET',
   data: { id: 23 },
-  errorMsgNoun: 'users',
+  errorMessageNoun: 'users',
 });
 ```
 
@@ -1004,7 +1004,7 @@ GET fetch request.
 ```js
 await ff.get('https://my-website.com/users', {
   data: { id: 23 },
-  errorMsgNoun: 'users',
+  errorMessageNoun: 'users',
 });
 ```
 
@@ -1030,7 +1030,7 @@ if `FarFetch` data option is provided.
 ```js
 await ff.post('https://my-website.com/user/23', {
   data: { gender: 'male', age: 39 },
-  errorMsgNoun: 'user',
+  errorMessageNoun: 'user',
 });
 ```
 
@@ -1056,7 +1056,7 @@ if `FarFetch` data option is provided.
 ```js
 await ff.put('https://my-website.com/user/47', {
   data: { gender: 'female', age: 22 },
-  errorMsgNoun: 'user',
+  errorMessageNoun: 'user',
 });
 ```
 
@@ -1082,7 +1082,7 @@ header if `FarFetch` data option is provided.
 ```js
 await ff.patch('https://my-website.com/user/91', {
   data: { age: 18 },
-  errorMsgNoun: 'user',
+  errorMessageNoun: 'user',
 });
 ```
 
@@ -1106,7 +1106,7 @@ DELETE fetch request.
 
 ```js
 await ff.delete('https://my-website.com/user/107', {
-  errorMsgNoun: 'user',
+  errorMessageNoun: 'user',
 });
 ```
 
@@ -1191,8 +1191,8 @@ The request object options without Fetch API options.
 | [data]               | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code>                                                                         | <code>{}</code>           | Data sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET, HEAD, DELETE.                                                                             |
 | [queryParams]        | <code>Object.&lt;string, (string\|number\|null\|boolean\|Array\|Object)&gt;</code>                                                                         | <code>{}</code>           | URL query params string. Don't use both `data` and `queryParams` together with GET, HEAD or DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the same effect. |
 | [files]              | <code>File</code> \| <code>Array.&lt;File&gt;</code> \| <code>Object.&lt;string, File&gt;</code> \| <code>Object.&lt;string, Array.&lt;File&gt;&gt;</code> |                           | Files to upload to server. Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys.                                                                            |
-| [errorMsgNoun]       | <code>string</code>                                                                                                                                        | <code>&#x27;&#x27;</code> | Appended error message noun to global error handler.                                                                                                                                                    |
-| [errorMsg]           | <code>string</code>                                                                                                                                        | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMsgNoun`.                                                                                                                                   |
+| [errorMessageNoun]       | <code>string</code>                                                                                                                                        | <code>&#x27;&#x27;</code> | Appended error message noun to global error handler.                                                                                                                                                    |
+| [errorMessage]           | <code>string</code>                                                                                                                                        | <code>&#x27;&#x27;</code> | Error message used to global error handler. Overrides `errorMessageNoun`.                                                                                                                                   |
 | [globalBeforeSend]   | <code>boolean</code>                                                                                                                                       | <code>true</code>         | Will this specific request use the beforeSend() hook?                                                                                                                                                   |
 | [globalAfterSend]    | <code>boolean</code>                                                                                                                                       | <code>true</code>         | Will this specific request use the afterSend() hook?                                                                                                                                                    |
 | [defaultOptionsUsed] | <code>boolean</code>                                                                                                                                       | <code>true</code>         | Will this specific request use the default options specified on instantiation and the return value of `dynamicOptions()`?                                                                               |
@@ -1233,7 +1233,7 @@ Callback for global before send hook.
 | --------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | [options]                   | <code>Object</code>                                        |                                                                                                                             |
 | [options.url]               | <code>string</code>                                        | The URL.                                                                                                                    |
-| [options.fetchAPIOptions]   | <code>RequestInit</code>                                   | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
+| [options.fetchApiOptions]   | <code>RequestInit</code>                                   | [Init options](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters) from Fetch API. |
 | [...options.requestOptions] | [<code>RequestOptionsNoInit</code>](#RequestOptionsNoInit) | The request object options without Fetch API options.                                                                       |
 
 <a name="afterSendCallback"></a>
@@ -1263,9 +1263,9 @@ Callback for global error handler.
 | [options.response]    | [<code>ResponsePlus</code>](#ResponsePlus)       | Request object plus responseJSON and responseText properties if correct header type. |
 | [options.userMessage] | <code>string</code>                              | The message given to the user.                                                       |
 
-<a name="errorMsgTemplateCallback"></a>
+<a name="errorMessageTemplateCallback"></a>
 
-## errorMsgTemplateCallback ⇒ <code>string</code>
+## errorMessageTemplateCallback ⇒ <code>string</code>
 
 Callback for overriding default error message template.
 
@@ -1276,4 +1276,4 @@ Callback for overriding default error message template.
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | [options]              | <code>Object</code>                                                                                                                                                                                 |                         |
 | [options.method]       | <code>&#x27;GET&#x27;</code> \| <code>&#x27;POST&#x27;</code> \| <code>&#x27;PUT&#x27;</code> \| <code>&#x27;PATCH&#x27;</code> \| <code>&#x27;DELETE&#x27;</code> \| <code>&#x27;HEAD&#x27;</code> | The CRUD method.        |
-| [options.errorMsgNoun] | <code>string</code>                                                                                                                                                                                 | The error message noun. |
+| [options.errorMessageNoun] | <code>string</code>                                                                                                                                                                                 | The error message noun. |

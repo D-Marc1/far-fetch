@@ -42,9 +42,9 @@ export { FarFetchError };
  * @property {File|File[]|Object.<string, File>|Object.<string, File[]>} [files] - Files to upload
  * to server.
  * Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys.
- * @property {string} [errorMsgNoun = ''] - Appended error message noun to global error handler.
- * @property {string} [errorMsg = ''] - Error message used to global error handler. Overrides
- * `errorMsgNoun`.
+ * @property {string} [errorMessageNoun = ''] - Appended error message noun to global error handler.
+ * @property {string} [errorMessage = ''] - Error message used to global error handler. Overrides
+ * `errorMessageNoun`.
  * @property {boolean} [globalBeforeSend = true] - Will this specific request use the beforeSend()
  * hook?
  * @property {boolean} [globalAfterSend = true] - Will this specific request use the afterSend()
@@ -80,7 +80,7 @@ export { FarFetchError };
  * @callback beforeSendCallback
  * @param {Object} [options]
  * @param {string} [options.url] - The URL.
- * @param {RequestInit} [options.fetchAPIOptions] -
+ * @param {RequestInit} [options.fetchApiOptions] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
  * @param {...RequestOptionsNoInit} [options.requestOptions] - The request object options without
@@ -108,10 +108,10 @@ export { FarFetchError };
 /**
  * Callback for overriding default error message template.
  *
- * @callback errorMsgTemplateCallback
+ * @callback errorMessageTemplateCallback
  * @param {Object} [options]
  * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} [options.method] - The CRUD method.
- * @param {string} [options.errorMsgNoun] - The error message noun.
+ * @param {string} [options.errorMessageNoun] - The error message noun.
  * @returns {string} Full error message string.
  */
 
@@ -121,7 +121,7 @@ export default class FarFetch {
    * Create FarFetch object.
    *
    * @param {Object} [options = {}] - Set options.
-   * @param {string} [options.baseURL = ''] - Base URL for each request.
+   * @param {string} [options.baseUrl = ''] - Base URL for each request.
    * @param {dynamicOptionsCallback} [options.dynamicOptions] - Function that allows a dynamic
    * option to be set, like a token stored in localStorage.
    * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
@@ -131,15 +131,15 @@ export default class FarFetch {
    * @param {ResponseType} [options.defaultResponseType = 'json'] - The default response type.
    * The default value is 'json'.
    * @param {errorHandlerCallback} [options.errorHandler] - Global error handler.
-   * @param {errorMsgTemplateCallback} [options.errorMsgTemplate] - Function to modify the default
-   * error message template for `errorMsgNoun`.
+   * @param {errorMessageTemplateCallback} [options.errorMessageTemplate] - Function to modify the default
+   * error message template for `errorMessageNoun`.
    * @param {...RequestInit} [options.defaultOptions = {}] -
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
    * from Fetch API.
    *
    * @example
    * const ff = new FarFetch({
-   *   baseURL: 'https://my-url.com',
+   *   baseUrl: 'https://my-url.com',
    *   dynamicOptions() {
    *     // Use authorization header if token set in localStorage
    *     if (localStorage.getItem('token')) {
@@ -162,28 +162,28 @@ export default class FarFetch {
    *       router.push('/login');
    *     }
    *
-   *     alert(userMessage); // Error message from either errorMsg or errorMsgNoun will be used
+   *     alert(userMessage); // Error message from either errorMessage or errorMessageNoun will be used
    *   },
    *   headers: { 'Content-Type': 'application/json' },
    * });
    */
   constructor({
-    baseURL = '',
+    baseUrl = '',
     dynamicOptions,
     beforeSend,
     afterSend,
     defaultResponseType = 'json',
     errorHandler,
-    errorMsgTemplate,
+    errorMessageTemplate,
     ...defaultOptions
   } = {}) {
-    this.baseURL = baseURL;
+    this.baseUrl = baseUrl;
     this.dynamicOptions = dynamicOptions;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
     this.defaultResponseType = defaultResponseType;
     this.errorHandler = errorHandler;
-    this.errorMsgTemplate = errorMsgTemplate;
+    this.errorMessageTemplate = errorMessageTemplate;
     this.defaultOptions = defaultOptions;
   }
 
@@ -193,21 +193,21 @@ export default class FarFetch {
    * @private
    * @param {Object} options
    * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} options.method - The CRUD method.
-   * @param {string} [options.errorMsgNoun = ''] - Appended error message noun to global error
+   * @param {string} [options.errorMessageNoun = ''] - Appended error message noun to global error
    * handler.
-   * @param {string} [options.errorMsg = ''] - Error message used to global error handler. Overrides
-   * `errorMsgNoun`
+   * @param {string} [options.errorMessage = ''] - Error message used to global error handler. Overrides
+   * `errorMessageNoun`
    * @returns {string} Full error message string.
    */
-  userMessage({ method, errorMsg, errorMsgNoun }) {
+  userMessage({ method, errorMessage, errorMessageNoun }) {
     // Custom error message used for single request
-    if (errorMsg) return errorMsg;
+    if (errorMessage) return errorMessage;
 
     // Error template is modified
-    if (typeof this.errorMsgTemplate === 'function') {
-      const errorMsgTemplate = this.errorMsgTemplate({ method, errorMsgNoun });
+    if (typeof this.errorMessageTemplate === 'function') {
+      const errorMessageTemplate = this.errorMessageTemplate({ method, errorMessageNoun });
 
-      return errorMsgTemplate;
+      return errorMessageTemplate;
     }
 
     let action = '';
@@ -222,7 +222,7 @@ export default class FarFetch {
       action = 'deleting';
     }
 
-    return `Error ${action} ${errorMsgNoun}`;
+    return `Error ${action} ${errorMessageNoun}`;
   }
 
   /**
@@ -403,8 +403,8 @@ export default class FarFetch {
     let fullURL = `${url}${queryString}`;
 
     // Base URL is given and URL on request is a relative path
-    if ((this.baseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
-      const prependURL = this.baseURL;
+    if ((this.baseUrl) && !FarFetchHelper.isAbsoluteURL(url)) {
+      const prependURL = this.baseUrl;
 
       fullURL = `${prependURL}${fullURL}`;
     }
@@ -470,14 +470,14 @@ export default class FarFetch {
    * @param {object} options
    */
   async runErrorHandler({
-    response, error, errorMsg, errorMsgNoun, options,
+    response, error, errorMessage, errorMessageNoun, options,
   }) {
     // Global error handler needs to be declared and either
-    // an entire errorMsg or just the appended errorMsgNoun need to be declared
-    if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
+    // an entire errorMessage or just the appended errorMessageNoun need to be declared
+    if (typeof this.errorHandler === 'function' && (errorMessage || errorMessageNoun)) {
       const userMessage = this.userMessage({
-        errorMsg,
-        errorMsgNoun,
+        errorMessage,
+        errorMessageNoun,
         method: options.method,
       });
 
@@ -506,15 +506,15 @@ export default class FarFetch {
    * await ff.fetch('https://my-website.com/users', {
    *  method: 'GET',
    *  data: { id: 23 },
-   *  errorMsgNoun: 'users',
+   *  errorMessageNoun: 'users',
    * });
    */
   async fetch(url, {
     data = {},
     queryParams = {},
     files,
-    errorMsg = '',
-    errorMsgNoun = '',
+    errorMessage = '',
+    errorMessageNoun = '',
     globalBeforeSend = true,
     globalAfterSend = true,
     defaultOptionsUsed = true,
@@ -531,13 +531,13 @@ export default class FarFetch {
 
     const beforeSendObjectParameters = {
       url,
-      fetchAPIOptions: options,
+      fetchApiOptions: options,
       data,
       queryParams,
       queryString,
       files,
-      errorMsg,
-      errorMsgNoun,
+      errorMessage,
+      errorMessageNoun,
       globalBeforeSend,
       globalAfterSend,
       defaultOptionsUsed,
@@ -560,7 +560,7 @@ export default class FarFetch {
       await this.runAfterSend({ globalAfterSend, response });
     } catch (error) {
       if (
-        typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)
+        typeof this.errorHandler === 'function' && (errorMessage || errorMessageNoun)
         && response && !Object.hasOwn(response, 'responseData')
       ) {
         // Has a response, but hasn't been mofified yet
@@ -568,7 +568,7 @@ export default class FarFetch {
       }
 
       await this.runErrorHandler({
-        response, error, errorMsg, errorMsgNoun, options,
+        response, error, errorMessage, errorMessageNoun, options,
       });
 
       // Throw request object to all manually handling exception and stop execution for sequential
@@ -594,7 +594,7 @@ export default class FarFetch {
    * @example
    * await ff.get('https://my-website.com/users', {
    *  data: { id: 23 },
-   *  errorMsgNoun: 'users',
+   *  errorMessageNoun: 'users',
    * });
    */
   async get(url, options) {
@@ -613,7 +613,7 @@ export default class FarFetch {
    * @example
    * await ff.post('https://my-website.com/user/23', {
    *  data: { gender: 'male', age: 39 },
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async post(url, options) {
@@ -632,7 +632,7 @@ export default class FarFetch {
    * @example
    * await ff.put('https://my-website.com/user/47', {
    *  data: { gender: 'female', age: 22 },
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async put(url, options) {
@@ -651,7 +651,7 @@ export default class FarFetch {
    * @example
    * await ff.patch('https://my-website.com/user/91', {
    *  data: { age: 18 },
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async patch(url, options) {
@@ -668,7 +668,7 @@ export default class FarFetch {
    *
    * @example
    * await ff.delete('https://my-website.com/user/107', {
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async delete(url, options) {
