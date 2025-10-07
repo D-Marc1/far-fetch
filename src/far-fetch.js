@@ -14,15 +14,19 @@ export { FarFetchError };
  */
 
 /**
- * Request object plus responseJSON and responseText properties if correct header type.
+ * Request object plus responseContent, which is the transformed body, according to the specified type.
  *
  * @typedef {Object} ResponsePlus
  * @property {Response} response - Fetch API response.
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Response|Response object}.
- * @property {Object} [response.responseJSON = null] - FarFetch added property that transforms the
- * body to JSON for syntactic sugar if the same response header type.
- * @property {string} [response.responseText = null] - FarFetch added property that transforms the
- * body to text for syntactic sugar if the same response header type.
+ * @property {ArrayBuffer|Blob|FormData|JSON|string|null} [response.responseContent = null] - FarFetch
+ * added property that transforms the body to the specified response type for syntactic sugar.
+ */
+
+/**
+ * Response types available.
+ *
+ * @typedef {('arrayBuffer'|'blob'|'formData'|'json'|'text'|null)} ResponseType
  */
 
 /**
@@ -32,21 +36,22 @@ export { FarFetchError };
  * @property {Object.<string, string|number|null|boolean|Array|Object>} [data = {}] - Data sent to
  * server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string` for: GET,
  * HEAD, DELETE.
- * @property {Object.<string, string|number|null|boolean|Array|Object>} [URLParams = {}] - URL query
- * params string. Don't use both `data` and `URLParams` together with GET, HEAD or DELETE, as
+ * @property {Object.<string, string|number|null|boolean|Array|Object>} [queryParams = {}] - URL query
+ * params string. Don't use both `data` and `queryParams` together with GET, HEAD or DELETE, as
  * they're redundant in these cases. Pick one or the other, as they will both have the same effect.
  * @property {File|File[]|Object.<string, File>|Object.<string, File[]>} [files] - Files to upload
  * to server.
  * Will use `file` as key if literal and `files[]` if array; if object, will use properties as keys.
- * @property {string} [errorMsgNoun = ''] - Appended error message noun to global error handler.
- * @property {string} [errorMsg = ''] - Error message used to global error handler. Overrides
- * `errorMsgNoun`.
+ * @property {string} [errorMessageNoun = ''] - Appended error message noun to global error handler.
+ * @property {string} [errorMessage = ''] - Error message used to global error handler. Overrides
+ * `errorMessageNoun`.
  * @property {boolean} [globalBeforeSend = true] - Will this specific request use the beforeSend()
  * hook?
  * @property {boolean} [globalAfterSend = true] - Will this specific request use the afterSend()
  * hook?
  * @property {boolean} [defaultOptionsUsed = true] - Will this specific request use the
  * default options specified on instantiation and the return value of `dynamicOptions()`?
+ * @property {ResponseType} [responseType = this.defaultResponseType] - The response type.
  */
 
 /**
@@ -75,7 +80,7 @@ export { FarFetchError };
  * @callback beforeSendCallback
  * @param {Object} [options]
  * @param {string} [options.url] - The URL.
- * @param {RequestInit} [options.fetchAPIOptions] -
+ * @param {RequestInit} [options.fetchApiOptions] -
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
  * from Fetch API.
  * @param {...RequestOptionsNoInit} [options.requestOptions] - The request object options without
@@ -86,8 +91,7 @@ export { FarFetchError };
  * Callback for global after send hook.
  *
  * @callback afterSendCallback
- * @param {ResponsePlus} response - Request object plus responseJSON and responseText properties if
- * correct header type.
+ * @param {ResponsePlus} response
  */
 
 /**
@@ -97,18 +101,17 @@ export { FarFetchError };
  * @param {Object} [options]
  * @param {FarFetchError|Error} [options.error] - The FarFetchError option. Will throw regular error
  * if needed.
- * @param {ResponsePlus} [options.response] - Request object plus responseJSON and responseText
- * properties if correct header type.
+ * @param {ResponsePlus} [options.response]
  * @param {string} [options.userMessage] - The message given to the user.
  */
 
 /**
  * Callback for overriding default error message template.
  *
- * @callback errorMsgTemplateCallback
+ * @callback errorMessageTemplateCallback
  * @param {Object} [options]
  * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} [options.method] - The CRUD method.
- * @param {string} [options.errorMsgNoun] - The error message noun.
+ * @param {string} [options.errorMessageNoun] - The error message noun.
  * @returns {string} Full error message string.
  */
 
@@ -118,23 +121,25 @@ export default class FarFetch {
    * Create FarFetch object.
    *
    * @param {Object} [options = {}] - Set options.
-   * @param {string} [options.baseURL = ''] - Base URL for each request.
+   * @param {string} [options.baseUrl = ''] - Base URL for each request.
    * @param {dynamicOptionsCallback} [options.dynamicOptions] - Function that allows a dynamic
    * option to be set, like a token stored in localStorage.
    * @param {beforeSendCallback} [options.beforeSend] - Function to do something before
    * each fetch request. Can return object with RequestOptions to add or override options.
    * @param {afterSendCallback} [options.afterSend] - Function to do something after each fetch
    * request.
+   * @param {ResponseType} [options.defaultResponseType = 'json'] - The default response type.
+   * The default value is 'json'.
    * @param {errorHandlerCallback} [options.errorHandler] - Global error handler.
-   * @param {errorMsgTemplateCallback} [options.errorMsgTemplate] - Function to modify the default
-   * error message template for `errorMsgNoun`.
+   * @param {errorMessageTemplateCallback} [options.errorMessageTemplate] - Function to modify the default
+   * error message template for `errorMessageNoun`.
    * @param {...RequestInit} [options.defaultOptions = {}] -
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
    * from Fetch API.
    *
    * @example
    * const ff = new FarFetch({
-   *   baseURL: 'https://my-url.com',
+   *   baseUrl: 'https://my-url.com',
    *   dynamicOptions() {
    *     // Use authorization header if token set in localStorage
    *     if (localStorage.getItem('token')) {
@@ -151,31 +156,34 @@ export default class FarFetch {
    *   afterSend(response) {
    *     console.log('Doing after before every request');
    *   },
+   *   defaultResponseType: 'text',
    *   errorHandler({ error, userMessage, response }) {
    *     if(response.status === 401) { // Unauthorized
    *       router.push('/login');
    *     }
    *
-   *     alert(userMessage); // Error message from either errorMsg or errorMsgNoun will be used
+   *     alert(userMessage); // Error message from either errorMessage or errorMessageNoun will be used
    *   },
    *   headers: { 'Content-Type': 'application/json' },
    * });
    */
   constructor({
-    baseURL = '',
+    baseUrl = '',
     dynamicOptions,
     beforeSend,
     afterSend,
+    defaultResponseType = 'json',
     errorHandler,
-    errorMsgTemplate,
+    errorMessageTemplate,
     ...defaultOptions
   } = {}) {
-    this.baseURL = baseURL;
+    this.baseUrl = baseUrl;
     this.dynamicOptions = dynamicOptions;
     this.beforeSend = beforeSend;
     this.afterSend = afterSend;
+    this.defaultResponseType = defaultResponseType;
     this.errorHandler = errorHandler;
-    this.errorMsgTemplate = errorMsgTemplate;
+    this.errorMessageTemplate = errorMessageTemplate;
     this.defaultOptions = defaultOptions;
   }
 
@@ -185,21 +193,21 @@ export default class FarFetch {
    * @private
    * @param {Object} options
    * @param {('GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD')} options.method - The CRUD method.
-   * @param {string} [options.errorMsgNoun = ''] - Appended error message noun to global error
+   * @param {string} [options.errorMessageNoun = ''] - Appended error message noun to global error
    * handler.
-   * @param {string} [options.errorMsg = ''] - Error message used to global error handler. Overrides
-   * `errorMsgNoun`
+   * @param {string} [options.errorMessage = ''] - Error message used to global error handler. Overrides
+   * `errorMessageNoun`
    * @returns {string} Full error message string.
    */
-  userMessage({ method, errorMsg, errorMsgNoun }) {
+  userMessage({ method, errorMessage, errorMessageNoun }) {
     // Custom error message used for single request
-    if (errorMsg) return errorMsg;
+    if (errorMessage) return errorMessage;
 
     // Error template is modified
-    if (typeof this.errorMsgTemplate === 'function') {
-      const errorMsgTemplate = this.errorMsgTemplate({ method, errorMsgNoun });
+    if (typeof this.errorMessageTemplate === 'function') {
+      const errorMessageTemplate = this.errorMessageTemplate({ method, errorMessageNoun });
 
-      return errorMsgTemplate;
+      return errorMessageTemplate;
     }
 
     let action = '';
@@ -214,7 +222,70 @@ export default class FarFetch {
       action = 'deleting';
     }
 
-    return `Error ${action} ${errorMsgNoun}`;
+    return `Error ${action} ${errorMessageNoun}`;
+  }
+
+  /**
+   * Get dynamic options.
+   *
+   * @private
+   * @returns {Promise<RequestOptions>} - Dynamic options.
+   */
+  async getDynamicOptions() {
+    let dynamicOptions;
+
+    if (typeof this.dynamicOptions === 'function') {
+      const isDynamicOptionsAsync = this.dynamicOptions.constructor.name === 'AsyncFunction';
+
+      // Await function if is async
+      if (isDynamicOptionsAsync) {
+        // Await and do something before every request
+        dynamicOptions = await this.dynamicOptions();
+      } else {
+        // Do something before every request
+        dynamicOptions = this.dynamicOptions();
+      }
+    }
+
+    return dynamicOptions;
+  }
+
+  /**
+   * Merge all fetch options together.
+   *
+   * @private
+   * @param {Object} options
+   * @param {boolean} [options.defaultOptionsUsed = true] - Will this specific request use the
+   * default options specified on instantiation and the return value of `dynamicOptions()`?
+   * @param {...RequestInit} [options.rest = {}] -
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options }
+   * from Fetch API.
+   * @returns {Promise<RequestOptions>} - Merged request options.
+   */
+  async mergeOptions({ defaultOptionsUsed, rest }) {
+    let options;
+
+    const dynamicOptions = await this.getDynamicOptions();
+
+    if (defaultOptionsUsed) {
+      let defaultOptions = deepMerge({}, this.defaultOptions);
+
+      if (dynamicOptions !== undefined) { // If dynamicOptions() has return value
+        if (!FarFetchHelper.isPlainObject(dynamicOptions)) {
+          throw new TypeError('Return value of beforeSend() must be plain object');
+        }
+
+        // Deep merge default options and dynamicOptions(); dynamicOptions() takes precedence
+        defaultOptions = deepMerge(defaultOptions, dynamicOptions);
+      }
+
+      // Deep merge with single request; single request takes precedence
+      options = deepMerge(defaultOptions, rest);
+    } else {
+      options = rest;
+    }
+
+    return options;
   }
 
   /**
@@ -225,8 +296,8 @@ export default class FarFetch {
    * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.data = {}] - Data
    * sent to server on request. Will use `body` for: POST, PUT, PATCH and `URL query params string`
    * for: GET, HEAD, DELETE.
-   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.URLParams = {}] -
-   * URL query params string. Don't use both `data` and `URLParams` together with GET, HEAD or
+   * @param {Object.<string, string|number|null|boolean|Array|Object>} [options.queryParams = {}] -
+   * URL query params string. Don't use both `data` and `queryParams` together with GET, HEAD or
    * DELETE, as they're redundant in these cases. Pick one or the other, as they will both have the
    * same effect.
    * @param {Object} [options.dynamicOptions = {}] - Dynamic options to be set, like a token stored
@@ -236,44 +307,25 @@ export default class FarFetch {
    * @param {File|File[]|Object.<string, File>|Object.<string, File[]>} [options.files] - Files to
    * upload to server.
    * @param {...RequestInit} [options.rest = {}] -
-   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options}
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters|Init options }
    * from Fetch API.
    */
-  setFetchOptions({
+  async setFetchOptions({
     data = {},
-    URLParams = {},
-    dynamicOptions,
+    queryParams = {},
     defaultOptionsUsed,
     files,
     ...rest
   }) {
-    let options = {};
+    let options = await this.mergeOptions({ rest, defaultOptionsUsed });
 
     let queryString = '';
-
-    if (defaultOptionsUsed) {
-      let defaultOptions = deepMerge({}, this.defaultOptions);
-
-      if (dynamicOptions !== undefined) { // If dynamicOptions() has return value
-        if (!FarFetchHelper.isPlainObject(dynamicOptions)) {
-          throw new TypeError('Return value of beforeSend() must be plain object');
-        }
-
-        // Deep merge default options and beforeSend() options; beforeSendOptions takes precedence
-        defaultOptions = deepMerge(defaultOptions, dynamicOptions);
-      }
-
-      // Deep merge with single request; single request takes precedence
-      options = deepMerge(defaultOptions, rest);
-    } else {
-      options = rest;
-    }
 
     const contentTypeHeader = options.headers?.['Content-Type'];
 
     const isFormURLEncoded = contentTypeHeader?.includes('application/x-www-form-urlencoded');
 
-    queryString = FarFetchHelper.objectToQueryString(URLParams);
+    queryString = FarFetchHelper.objectToQueryString(queryParams);
 
     if (files) { // Files property used, so must be upload
       const formData = FarFetchHelper.createFormData({ files, data });
@@ -286,8 +338,8 @@ export default class FarFetch {
     } else if (Object.keys(data).length > 0) {
       // Default is URL query string. GET/HEAD can't be used with body. Body is optional for DELETE.
       if (options.method === 'GET' || options.method === 'DELETE' || options.method === 'HEAD') {
-        if (Object.keys(data).length > 0 && Object.keys(URLParams).length > 0) {
-          throw new FarFetchError(`Don't use both 'data' and 'URLParams' together with GET, HEAD or 
+        if (Object.keys(data).length > 0 && Object.keys(queryParams).length > 0) {
+          throw new FarFetchError(`Don't use both 'data' and 'queryParams' together with GET, HEAD or 
           DELETE, as they're redundant in these cases. Pick one or the other, as they will both have
           the same effect, but prefer 'data' in this case for consistency.`);
         }
@@ -309,104 +361,72 @@ export default class FarFetch {
 
   /**
    * @private
-   * @param {Response} response - Fetch API response object.
-   * @returns {Promise<ResponsePlus>} - Modified response object with responseJSON and responseText
+   * @param {Object} options
+   * @param {Response} option.response - Fetch API response object.
+   * @param {ResponseType} [options.responseType = this.defaultResponseType] - The response type.
+   * @returns {Promise<ResponsePlus>} - Modified response object with the sepcified response type
    * properties as transformed body for syntactic sugar.
    */
-  static async modifiedResponse(response) {
-    const responseContentType = response.headers?.get('Content-Type');
+  static async modifiedResponse({ response, responseType }) {
+    const responseContentType = response.headers.get('Content-Type');
 
-    const responseContentTypeJson = responseContentType?.includes('application/json');
-    const responseContentTypeText = responseContentType?.includes('text/plain');
+    // Deep cloning response object to prevent mutation. Cloning response before body transformation
+    // allows body to be re-transformed.
+    const responseCloned = response.clone();
 
-    // Transforming body, like calling json(), can only be used once, so clone is needed to keep
-    // original. Also needed to clone parameter to prevent mutating it.
-    const modifiedResponse = response.clone();
+    // responseContent will always be added, even if the response body isn't transformed
+    let responseContent = null;
 
-    modifiedResponse.responseJSON = null;
-    modifiedResponse.responseText = null;
-
-    if (responseContentTypeJson) {
-      modifiedResponse.responseJSON = await response.json();
-    } else if (responseContentTypeText) {
-      modifiedResponse.responseText = await response.text();
+    // Valid response and has a content type.
+    if (
+      FarFetchHelper.isValidReturnType(responseType) && responseType !== null
+      && responseContentType
+    ) {
+      responseContent = await response[responseType]();
     }
 
-    return modifiedResponse;
+    Object.assign(responseCloned, { responseContent });
+
+    return responseCloned;
   }
 
   /**
-   * Request function called on every CRUD function.
+   * Get the full URL, with the query string.
    *
-   * @param {string} url - The URL.
-   * @param {Object} options
-   * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD'} options.method - The CRUD method.
-   * @param {...RequestOptions} [options.RequestOptions]
-   * @returns {Promise<ResponsePlus>}
-   * @throws {RequestException}
-   *
-   * @example
-   * await ff.fetch('https://my-website.com/users', {
-   *  method: 'GET',
-   *  data: { id: 23 },
-   *  errorMsgNoun: 'users',
-   * });
+   * @private
+   * @param options
+   * @param {string} [options.url] - The URL.
+   * @param {string} [options.queryString] - The query string.
+   * @returns {string} The full URL.
    */
-  async fetch(url, {
-    data = {},
-    URLParams = {},
-    files,
-    errorMsg = '',
-    errorMsgNoun = '',
-    globalBeforeSend = true,
-    globalAfterSend = true,
-    defaultOptionsUsed = true,
-    ...rest
-  }) {
-    let dynamicOptions;
+  getFullURL({ url, queryString }) {
+    let fullURL = `${url}${queryString}`;
 
-    if (typeof this.dynamicOptions === 'function') {
-      const isDynamicOptionsAsync = this.dynamicOptions.constructor.name === 'AsyncFunction';
+    // Base URL is given and URL on request is a relative path
+    if ((this.baseUrl) && !FarFetchHelper.isAbsoluteURL(url)) {
+      const prependURL = this.baseUrl;
 
-      // Await function if is async
-      if (isDynamicOptionsAsync) {
-        // Await and do something before every request
-        dynamicOptions = await this.dynamicOptions();
-      } else {
-        // Do something before every request
-        dynamicOptions = this.dynamicOptions();
-      }
+      fullURL = `${prependURL}${fullURL}`;
     }
 
-    const { queryString, options } = this.setFetchOptions({
-      data,
-      URLParams,
-      dynamicOptions,
-      defaultOptionsUsed,
-      files,
-      ...rest,
-    });
+    return fullURL;
+  }
+
+  /**
+   * Run beforeSend() global function.
+   *
+   * @private
+   * @param {object} options
+   * @param {beforeSendCallback} [options.beforeSendObjectParameters] - Function to do something
+   * before.
+   * each fetch request. Can return object with RequestOptions to add or override options.
+   */
+  async runBeforeSend({ beforeSendObjectParameters }) {
+    const { globalBeforeSend } = beforeSendObjectParameters;
 
     // If globalBeforeSend option is set to true and beforeSend() declared on instantiation
     if (globalBeforeSend && typeof this.beforeSend === 'function') {
       const isBeforeSendAsync = this.beforeSend.constructor.name === 'AsyncFunction';
-
-      // // Merges default request options set in instantiation with ones set in specific request.
-      // // Will obviously not have access to beforeSend() options returned.
-      // const fetchAPIOptions = deepMerge(this.defaultOptions, rest);
-
-      const beforeSendObjectParameters = {
-        url,
-        fetchAPIOptions: options,
-        data,
-        URLParams,
-        files,
-        errorMsg,
-        errorMsgNoun,
-        globalBeforeSend,
-        globalAfterSend,
-        defaultOptionsUsed,
-      };
 
       // Await function if is async
       if (isBeforeSendAsync) {
@@ -417,61 +437,139 @@ export default class FarFetch {
         this.beforeSend(beforeSendObjectParameters);
       }
     }
+  }
+
+  /**
+   * Run afterSend() global function.
+   *
+   * @private
+   * @param {object} options
+   * @param {afterSendCallback} [options.globalAfterSend] - Function to do something after each
+   * fetch request.
+   * @param {ResponsePlus} - Fetch API response plus added properties for syntactic sugar.
+   */
+  async runAfterSend({ globalAfterSend, response }) {
+    // If globalAfterSend option is set to true and afterSend() declared on instantiation
+    if (globalAfterSend && typeof this.afterSend === 'function') {
+      const isAfterSendAsync = this.afterSend.constructor.name === 'AsyncFunction';
+
+      if (isAfterSendAsync) {
+        // Await and do something after every request
+        await this.afterSend(response);
+      } else {
+        // Do something after every request
+        this.afterSend(response);
+      }
+    }
+  }
+
+  /**
+   * Run errorHandler() global function.
+   *
+   * @private
+   * @param {object} options
+   */
+  async runErrorHandler({
+    response, error, errorMessage, errorMessageNoun, options,
+  }) {
+    // Global error handler needs to be declared and either
+    // an entire errorMessage or just the appended errorMessageNoun need to be declared
+    if (typeof this.errorHandler === 'function' && (errorMessage || errorMessageNoun)) {
+      const userMessage = this.userMessage({
+        errorMessage,
+        errorMessageNoun,
+        method: options.method,
+      });
+
+      const isErrorHandlerAsync = this.errorHandler.constructor.name === 'AsyncFunction';
+
+      if (isErrorHandlerAsync) {
+        // Await error handler
+        await this.errorHandler({ error, response, userMessage });
+      } else {
+        // Non-await error handler
+        this.errorHandler({ error, response, userMessage });
+      }
+    }
+  }
+
+  /**
+   * Request function called on every CRUD function.
+   *
+   * @param {string} url - The URL.
+   * @param {object} options
+   * @param {RequestOptions} [options.requestOptions]
+   * @returns {Promise<ResponsePlus>}
+   * @throws {RequestException}
+   *
+   * @example
+   * await ff.fetch('https://my-website.com/users', {
+   *  method: 'GET',
+   *  data: { id: 23 },
+   *  errorMessageNoun: 'users',
+   * });
+   */
+  async fetch(url, {
+    data = {},
+    queryParams = {},
+    files,
+    errorMessage = '',
+    errorMessageNoun = '',
+    globalBeforeSend = true,
+    globalAfterSend = true,
+    defaultOptionsUsed = true,
+    responseType = this.defaultResponseType,
+    ...rest
+  }) {
+    const { queryString, options } = await this.setFetchOptions({
+      data,
+      queryParams,
+      defaultOptionsUsed,
+      files,
+      ...rest,
+    });
+
+    const beforeSendObjectParameters = {
+      url,
+      fetchApiOptions: options,
+      data,
+      queryParams,
+      queryString,
+      files,
+      errorMessage,
+      errorMessageNoun,
+      globalBeforeSend,
+      globalAfterSend,
+      defaultOptionsUsed,
+      responseType,
+    };
+
+    await this.runBeforeSend({ beforeSendObjectParameters });
 
     let response = '';
 
     try {
-      let fullURL = `${url}${queryString}`;
-
-      // Base URL is given and URL on request is a relative path
-      if ((this.baseURL) && !FarFetchHelper.isAbsoluteURL(url)) {
-        const prependURL = this.baseURL;
-
-        fullURL = `${prependURL}${fullURL}`;
-      }
+      const fullURL = this.getFullURL({ url, queryString });
 
       response = await fetch(fullURL, options);
 
       if (!response.ok) throw new FarFetchError('Server error.');
 
-      response = await FarFetch.modifiedResponse(response);
+      response = await FarFetch.modifiedResponse({ response, responseType });
 
-      // If globalAfterSend option is set to true and afterSend() declared on instantiation
-      if (globalAfterSend && typeof this.afterSend === 'function') {
-        const isAfterSendAsync = this.afterSend.constructor.name === 'AsyncFunction';
-
-        if (isAfterSendAsync) {
-          // Await and do something after every request
-          await this.afterSend(response);
-        } else {
-          // Do something after every request
-          this.afterSend(response);
-        }
-      }
+      await this.runAfterSend({ globalAfterSend, response });
     } catch (error) {
-      // Global error handler needs to be declared and either
-      // an entire errorMsg or just the appended errorMsgNoun need to be declared
-      if (typeof this.errorHandler === 'function' && (errorMsg || errorMsgNoun)) {
-        if (response) {
-          response = await FarFetch.modifiedResponse(response);
-        }
-
-        const userMessage = this.userMessage({
-          errorMsg,
-          errorMsgNoun,
-          method: options.method,
-        });
-
-        const isErrorHandlerAsync = this.errorHandler.constructor.name === 'AsyncFunction';
-
-        if (isErrorHandlerAsync) {
-          // Await error handler
-          await this.errorHandler({ error, response, userMessage });
-        } else {
-          // Non-await error handler
-          this.errorHandler({ error, response, userMessage });
-        }
+      if (
+        typeof this.errorHandler === 'function' && (errorMessage || errorMessageNoun)
+        && response && !Object.hasOwn(response, 'responseContent')
+      ) {
+        // Has a response, but hasn't been mofified yet
+        response = await FarFetch.modifiedResponse({ response, responseType });
       }
+
+      await this.runErrorHandler({
+        response, error, errorMessage, errorMessageNoun, options,
+      });
 
       // Throw request object to all manually handling exception and stop execution for sequential
       // tasks
@@ -496,7 +594,7 @@ export default class FarFetch {
    * @example
    * await ff.get('https://my-website.com/users', {
    *  data: { id: 23 },
-   *  errorMsgNoun: 'users',
+   *  errorMessageNoun: 'users',
    * });
    */
   async get(url, options) {
@@ -515,7 +613,7 @@ export default class FarFetch {
    * @example
    * await ff.post('https://my-website.com/user/23', {
    *  data: { gender: 'male', age: 39 },
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async post(url, options) {
@@ -534,7 +632,7 @@ export default class FarFetch {
    * @example
    * await ff.put('https://my-website.com/user/47', {
    *  data: { gender: 'female', age: 22 },
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async put(url, options) {
@@ -553,7 +651,7 @@ export default class FarFetch {
    * @example
    * await ff.patch('https://my-website.com/user/91', {
    *  data: { age: 18 },
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async patch(url, options) {
@@ -570,7 +668,7 @@ export default class FarFetch {
    *
    * @example
    * await ff.delete('https://my-website.com/user/107', {
-   *  errorMsgNoun: 'user',
+   *  errorMessageNoun: 'user',
    * });
    */
   async delete(url, options) {
