@@ -42,7 +42,7 @@ describe('testing data parameters', () => {
       name: 'Bobby Big Boy',
       gender: 'Male',
       age: 5,
-      favoriteSports: ['Basketball', 'Footbal'],
+      favoriteSports: ['Basketball', 'Football'],
       height: { feet: 6, inches: 3 },
     };
 
@@ -638,8 +638,10 @@ describe('testing automatically transforming response body, but allowing manual 
     let responseContent = isManual ? await response[type]() : response.responseContent;
 
     if (type === 'arrayBuffer') {
-      responseContent = JSON.parse(new TextDecoder().decode(responseContent));
+      responseContent = JSON.parse(new TextDecoder().decode(new Uint8Array(responseContent)));
     } else if (type === 'blob') {
+      // Uses blob.text() to get content
+      // https://developer.mozilla.org/en-US/docs/Web/API/Blob/text
       responseContent = JSON.parse(await responseContent.text());
     }
 
